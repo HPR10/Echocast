@@ -9,6 +9,7 @@ import Foundation
 
 final class URLHistoryRepositoryImpl: URLHistoryRepository {
     private let key = "url_history"
+    private let maxItems = 10
     
     func getHistory() -> [String] {
         UserDefaults.standard.stringArray(forKey: key) ?? []
@@ -18,6 +19,7 @@ final class URLHistoryRepositoryImpl: URLHistoryRepository {
         var history = getHistory()
         history.removeAll { $0 == url }
         history.insert(url, at: 0)
+        history = Array(history.prefix(maxItems))
         UserDefaults.standard.set(history, forKey: key)
     }
 }
