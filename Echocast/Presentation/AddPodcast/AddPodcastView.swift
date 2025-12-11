@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct AddPodcastView: View {
-    @StateObject private var viewModel = AddPodcastViewModel(repository: URLHistoryRepositoryImpl())
+    @StateObject private var viewModel = AddPodcastViewModel()
 
     var body: some View {
         VStack(spacing: 16) {

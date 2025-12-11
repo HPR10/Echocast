@@ -8,7 +8,6 @@
 import Foundation
 import Combine
 
-@MainActor
 final class AddPodcastViewModel: ObservableObject {
 
     @Published var rssURL = ""
@@ -16,7 +15,7 @@ final class AddPodcastViewModel: ObservableObject {
     
     private let repository: URLHistoryRepository
     
-    init(repository: URLHistoryRepository) {
+    init(repository: URLHistoryRepository = URLHistoryRepositoryImpl()) {
         self.repository = repository
         loadHistory()
     }
