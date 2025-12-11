@@ -1,5 +1,5 @@
 //
-//  URLHistoryRepositoryImpl.swift
+//  URLHistoryRepository.swift
 //  Echocast
 //
 //  Created by actdigital on 10/12/25.
@@ -7,7 +7,7 @@
 
 import Foundation
 
-final class URLHistoryRepositoryImpl: URLHistoryRepository {
+final class URLHistoryRepository: URLHistoryRepositoryInput {
     private let key = "url_history"
     private let maxItems = 10
     

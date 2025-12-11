@@ -13,14 +13,14 @@ final class AddPodcastViewModel: ObservableObject {
     @Published var rssURL = ""
     @Published private(set) var urlHistory: [String] = []
     
-    private let repository: URLHistoryRepository
-    
-    init(repository: URLHistoryRepository = URLHistoryRepositoryImpl()) {
+    private let repository: URLHistoryRepositoryInput
+
+    init(repository: URLHistoryRepositoryInput = URLHistoryRepository()) {
         self.repository = repository
         loadHistory()
     }
 
-    func loadFeed() async {
+    func addURL() {
         guard !rssURL.isEmpty else { return }
         repository.save(url: rssURL)
         loadHistory()

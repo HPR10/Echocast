@@ -40,9 +40,7 @@ private extension AddPodcastView {
             .autocapitalization(.none)
 
         Button("Carregar") {
-            Task {
-                await viewModel.loadFeed()
-            }
+            viewModel.addURL()
         }
         .buttonStyle(.borderedProminent)
     }
