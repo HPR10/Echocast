@@ -11,7 +11,7 @@ import SwiftUI
 struct EchocastApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            AddPodcastView()
         }
     }
 }
