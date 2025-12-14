@@ -10,9 +10,19 @@ import Observation
 
 @Observable
 final class AddPodcastViewModel {
-    var rssURL = ""
+    var feedURL: String?
+
+    private let manageHistoryUseCase: ManageFeedHistoryUseCase
+
+    init(manageHistoryUseCase: ManageFeedHistoryUseCase) {
+        self.manageHistoryUseCase = manageHistoryUseCase
+    }
+
+    func addURL(currentHistory: [FeedHistoryItem]) {
+        manageHistoryUseCase.addURL(feedURL, currentHistory: currentHistory)
+    }
 
     func selectURL(_ url: String) {
-        rssURL = url
+        feedURL = url
     }
 }
