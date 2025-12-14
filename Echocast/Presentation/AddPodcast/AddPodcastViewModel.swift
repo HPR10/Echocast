@@ -6,31 +6,13 @@
 //
 
 import Foundation
-import Combine
+import Observation
 
-final class AddPodcastViewModel: ObservableObject {
+@Observable
+final class AddPodcastViewModel {
+    var rssURL = ""
 
-    @Published var rssURL = ""
-    @Published private(set) var urlHistory: [String] = []
-    
-    private let repository: URLHistoryRepositoryInput
-
-    init(repository: URLHistoryRepositoryInput = URLHistoryRepository()) {
-        self.repository = repository
-        loadHistory()
-    }
-
-    func addURL() {
-        guard !rssURL.isEmpty else { return }
-        repository.save(url: rssURL)
-        loadHistory()
-    }
-    
     func selectURL(_ url: String) {
         rssURL = url
-    }
-    
-    private func loadHistory() {
-        urlHistory = repository.getHistory()
     }
 }

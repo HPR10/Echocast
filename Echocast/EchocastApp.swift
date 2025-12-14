@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 @main
 struct EchocastApp: App {
@@ -13,5 +14,6 @@ struct EchocastApp: App {
         WindowGroup {
             AddPodcastView()
         }
+        .modelContainer(for: URLHistoryItem.self)
     }
 }

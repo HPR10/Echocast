@@ -6,9 +6,12 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct AddPodcastView: View {
-    @StateObject private var viewModel = AddPodcastViewModel()
+    @State private var viewModel = AddPodcastViewModel()
+    @Query(sort: \URLHistoryItem.addedAt, order: .reverse) private var urlHistory: [URLHistoryItem]
+    @Environment(\.modelContext) private var modelContext
 
     var body: some View {
         VStack(spacing: 16) {
@@ -40,25 +43,47 @@ private extension AddPodcastView {
             .autocapitalization(.none)
 
         Button("Carregar") {
-            viewModel.addURL()
+            addURL()
         }
         .buttonStyle(.borderedProminent)
     }
 
     @ViewBuilder
     var historyList: some View {
-        if !viewModel.urlHistory.isEmpty {
-            List(viewModel.urlHistory, id: \.self) { url in
-                Text(url)
+        if !urlHistory.isEmpty {
+            List(urlHistory) { item in
+                Text(item.url)
                     .onTapGesture {
-                        viewModel.selectURL(url)
+                        viewModel.selectURL(item.url)
                     }
             }
             .listStyle(.plain)
+        }
+    }
+
+    func addURL() {
+        guard !viewModel.rssURL.isEmpty else { return }
+
+        // Remove duplicata se existir
+        if let existing = urlHistory.first(where: { $0.url == viewModel.rssURL }) {
+            modelContext.delete(existing)
+        }
+
+        // Adiciona nova URL
+        let newItem = URLHistoryItem(url: viewModel.rssURL)
+        modelContext.insert(newItem)
+
+        // Limita a 10 itens
+        let excess = urlHistory.count - 9
+        if excess > 0 {
+            for item in urlHistory.suffix(excess) {
+                modelContext.delete(item)
+            }
         }
     }
 }
 
 #Preview {
     AddPodcastView()
+        .modelContainer(for: URLHistoryItem.self, inMemory: true)
 }
