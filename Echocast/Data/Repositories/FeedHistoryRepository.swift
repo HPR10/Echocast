@@ -19,10 +19,12 @@ final class FeedHistoryRepository: FeedHistoryRepositoryProtocol {
     func add(_ url: String) {
         let newItem = FeedHistoryItem(url: url)
         modelContext.insert(newItem)
+        try? modelContext.save()
     }
 
     func delete(_ item: FeedHistoryItem) {
         modelContext.delete(item)
+        try? modelContext.save()
     }
 
     func findByURL(_ url: String) -> FeedHistoryItem? {
@@ -40,5 +42,6 @@ final class FeedHistoryRepository: FeedHistoryRepositoryProtocol {
         for item in sortedByDate.prefix(excess) {
             modelContext.delete(item)
         }
+        try? modelContext.save()
     }
 }
