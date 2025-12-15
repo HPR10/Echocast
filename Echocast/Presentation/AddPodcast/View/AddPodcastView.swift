@@ -45,12 +45,23 @@ private extension AddPodcastView {
             .textFieldStyle(.roundedBorder)
             .keyboardType(.URL)
             .autocapitalization(.none)
+            .overlay(
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(viewModel.shouldShowError(for: inputText) ? Color.red : Color.clear, lineWidth: 1)
+            )
+
+        if viewModel.shouldShowError(for: inputText), let error = viewModel.validationError(for: inputText) {
+            Text(error)
+                .font(.caption)
+                .foregroundStyle(.red)
+        }
 
         Button("Carregar") {
             Task {
                 await viewModel.addURL(inputText, currentHistory: feedHistory)
             }
         }
+        .disabled(!viewModel.isValidURL(inputText))
         .buttonStyle(.borderedProminent)
     }
 
