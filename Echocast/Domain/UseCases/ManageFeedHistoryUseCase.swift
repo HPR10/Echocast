@@ -7,7 +7,8 @@
 
 import Foundation
 
-final class ManageFeedHistoryUseCase: @unchecked Sendable {
+@MainActor
+final class ManageFeedHistoryUseCase {
     private let repository: FeedHistoryRepositoryProtocol
     private let maxItems: Int
 
@@ -16,15 +17,15 @@ final class ManageFeedHistoryUseCase: @unchecked Sendable {
         self.maxItems = maxItems
     }
 
-    func addURL(_ url: String?, currentHistory: [FeedHistoryItem]) {
-        guard let url, !url.isEmpty else { return }
+    func addURL(_ url: String, currentHistory: [FeedHistoryItem]) async {
+        guard !url.isEmpty else { return }
 
-        if let existing = repository.findByURL(url) {
-            repository.delete(existing)
+        if let existing = await repository.findByURL(url) {
+            await repository.delete(existing)
         }
 
-        repository.add(url)
+        await repository.add(url)
 
-        repository.deleteOldestExceeding(limit: maxItems, from: currentHistory)
+        await repository.deleteOldestExceeding(limit: maxItems, from: currentHistory)
     }
 }

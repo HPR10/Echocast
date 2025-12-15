@@ -8,8 +8,8 @@
 import Foundation
 
 protocol FeedHistoryRepositoryProtocol: Sendable {
-    func add(_ url: String)
-    func delete(_ item: FeedHistoryItem)
-    func findByURL(_ url: String) -> FeedHistoryItem?
-    func deleteOldestExceeding(limit: Int, from items: [FeedHistoryItem])
+    func add(_ url: String) async
+    func delete(_ item: FeedHistoryItem) async
+    func findByURL(_ url: String) async -> FeedHistoryItem?
+    func deleteOldestExceeding(limit: Int, from items: [FeedHistoryItem]) async
 }

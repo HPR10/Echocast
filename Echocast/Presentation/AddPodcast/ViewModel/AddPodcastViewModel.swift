@@ -9,20 +9,15 @@ import Foundation
 import Observation
 
 @Observable
+@MainActor
 final class AddPodcastViewModel {
-    var feedURL: String?
-
     private let manageHistoryUseCase: ManageFeedHistoryUseCase
 
     init(manageHistoryUseCase: ManageFeedHistoryUseCase) {
         self.manageHistoryUseCase = manageHistoryUseCase
     }
 
-    func addURL(currentHistory: [FeedHistoryItem]) {
-        manageHistoryUseCase.addURL(feedURL, currentHistory: currentHistory)
-    }
-
-    func selectURL(_ url: String) {
-        feedURL = url
+    func addURL(_ url: String, currentHistory: [FeedHistoryItem]) async {
+        await manageHistoryUseCase.addURL(url, currentHistory: currentHistory)
     }
 }

@@ -8,7 +8,8 @@
 import Foundation
 import SwiftData
 
-final class FeedHistoryRepository: FeedHistoryRepositoryProtocol, @unchecked Sendable {
+@MainActor
+final class FeedHistoryRepository: FeedHistoryRepositoryProtocol {
     private let modelContext: ModelContext
 
     init(modelContext: ModelContext) {

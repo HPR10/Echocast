@@ -10,6 +10,7 @@ import SwiftData
 
 struct AddPodcastView: View {
     @State private var viewModel: AddPodcastViewModel
+    @State private var inputText = ""
     @Query(sort: \FeedHistoryItem.addedAt, order: .reverse) private var feedHistory: [FeedHistoryItem]
 
     init(viewModel: AddPodcastViewModel) {
@@ -31,13 +32,6 @@ struct AddPodcastView: View {
 
 private extension AddPodcastView {
 
-    var feedURLBinding: Binding<String> {
-        Binding(
-            get: { viewModel.feedURL ?? "" },
-            set: { viewModel.feedURL = $0.isEmpty ? nil : $0 }
-        )
-    }
-
     @ViewBuilder
     var headerView: some View {
         Text("URL do Podcast")
@@ -47,24 +41,31 @@ private extension AddPodcastView {
 
     @ViewBuilder
     var inputSection: some View {
-        TextField("URL do RSS", text: feedURLBinding)
+        TextField("URL do RSS", text: $inputText)
             .textFieldStyle(.roundedBorder)
             .keyboardType(.URL)
             .autocapitalization(.none)
 
         Button("Carregar") {
-            viewModel.addURL(currentHistory: feedHistory)
+            Task {
+                await viewModel.addURL(inputText, currentHistory: feedHistory)
+            }
         }
         .buttonStyle(.borderedProminent)
     }
 
     @ViewBuilder
     var historyList: some View {
-        if !feedHistory.isEmpty {
+        if feedHistory.isEmpty {
+            ContentUnavailableView(
+                "Nenhum histórico",
+                systemImage: "tray.fill",
+            )
+        } else {
             List(feedHistory) { item in
                 Text(item.url)
                     .onTapGesture {
-                        viewModel.selectURL(item.url)
+                        inputText = item.url
                     }
             }
             .listStyle(.plain)
