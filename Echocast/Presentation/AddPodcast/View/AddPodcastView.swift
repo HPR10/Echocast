@@ -83,3 +83,141 @@ private extension AddPodcastView {
         }
     }
 }
+
+// MARK: - Previews
+
+#Preview("Estado Vazio") {
+    AddPodcastView(
+        viewModel: AddPodcastViewModel(
+            manageHistoryUseCase: ManageFeedHistoryUseCase(
+                repository: MockFeedHistoryRepository()
+            )
+        )
+    )
+    .modelContainer(for: FeedHistoryItem.self, inMemory: true)
+}
+
+#Preview("Com Histórico") {
+    let container = try! ModelContainer(
+        for: FeedHistoryItem.self,
+        configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+    )
+
+    let sampleURLs = [
+        "https://feeds.simplecast.com/54nAGcIl",
+        "https://anchor.fm/s/example/podcast/rss",
+        "https://rss.art19.com/the-daily"
+    ]
+
+    for url in sampleURLs {
+        container.mainContext.insert(FeedHistoryItem(url: url))
+    }
+
+    return AddPodcastView(
+        viewModel: AddPodcastViewModel(
+            manageHistoryUseCase: ManageFeedHistoryUseCase(
+                repository: MockFeedHistoryRepository()
+            )
+        )
+    )
+    .modelContainer(container)
+}
+
+#Preview("URL Inválida") {
+    struct InvalidURLPreview: View {
+        @State private var viewModel = AddPodcastViewModel(
+            manageHistoryUseCase: ManageFeedHistoryUseCase(
+                repository: MockFeedHistoryRepository()
+            )
+        )
+        @State private var inputText = "invalid-url"
+
+        var body: some View {
+            VStack(spacing: 16) {
+                Text("URL do Podcast")
+                    .font(.title2)
+                    .fontWeight(.bold)
+
+                TextField("URL do RSS", text: $inputText)
+                    .textFieldStyle(.roundedBorder)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6)
+                            .stroke(viewModel.shouldShowError(for: inputText) ? Color.red : Color.clear, lineWidth: 1)
+                    )
+
+                if viewModel.shouldShowError(for: inputText), let error = viewModel.validationError(for: inputText) {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
+
+                Button("Carregar") {}
+                    .disabled(!viewModel.isValidURL(inputText))
+                    .buttonStyle(.borderedProminent)
+
+                Spacer()
+            }
+            .padding()
+        }
+    }
+
+    return InvalidURLPreview()
+}
+
+#Preview("URL Válida") {
+    struct ValidURLPreview: View {
+        @State private var viewModel = AddPodcastViewModel(
+            manageHistoryUseCase: ManageFeedHistoryUseCase(
+                repository: MockFeedHistoryRepository()
+            )
+        )
+        @State private var inputText = "https://feeds.simplecast.com/podcast"
+
+        var body: some View {
+            VStack(spacing: 16) {
+                Text("URL do Podcast")
+                    .font(.title2)
+                    .fontWeight(.bold)
+
+                TextField("URL do RSS", text: $inputText)
+                    .textFieldStyle(.roundedBorder)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6)
+                            .stroke(viewModel.shouldShowError(for: inputText) ? Color.red : Color.clear, lineWidth: 1)
+                    )
+
+                Button("Carregar") {}
+                    .disabled(!viewModel.isValidURL(inputText))
+                    .buttonStyle(.borderedProminent)
+
+                Spacer()
+            }
+            .padding()
+        }
+    }
+
+    return ValidURLPreview()
+}
+
+#Preview("Dark Mode") {
+    AddPodcastView(
+        viewModel: AddPodcastViewModel(
+            manageHistoryUseCase: ManageFeedHistoryUseCase(
+                repository: MockFeedHistoryRepository()
+            )
+        )
+    )
+    .modelContainer(for: FeedHistoryItem.self, inMemory: true)
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Landscape", traits: .landscapeLeft) {
+    AddPodcastView(
+        viewModel: AddPodcastViewModel(
+            manageHistoryUseCase: ManageFeedHistoryUseCase(
+                repository: MockFeedHistoryRepository()
+            )
+        )
+    )
+    .modelContainer(for: FeedHistoryItem.self, inMemory: true)
+}
