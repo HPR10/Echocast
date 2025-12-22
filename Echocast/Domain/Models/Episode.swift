@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct Episode: Sendable, Identifiable {
+struct Episode: Sendable, Identifiable, Hashable {
     let id: UUID
     let title: String
     let description: String?
