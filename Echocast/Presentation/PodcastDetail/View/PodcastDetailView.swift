@@ -1,0 +1,157 @@
+//
+//  PodcastDetailView.swift
+//  Echocast
+//
+//  Created by Hugo Pinheiro on 20/12/25.
+//
+
+import SwiftUI
+
+struct PodcastDetailView: View {
+    @State private var viewModel: PodcastDetailViewModel
+
+    init(viewModel: PodcastDetailViewModel) {
+        self._viewModel = State(initialValue: viewModel)
+    }
+
+    var body: some View {
+        VStack(spacing: 24) {
+            podcastHeader
+            episodesSection
+        }
+        .navigationTitle(viewModel.podcast.title)
+        .navigationBarTitleDisplayMode(.large)
+    }
+}
+
+// MARK: - View Components
+
+private extension PodcastDetailView {
+
+    @ViewBuilder
+    var podcastHeader: some View {
+        VStack(spacing: 12) {
+            AsyncImage(url: viewModel.podcast.imageURL) { image in
+                image
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+            } placeholder: {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.gray.opacity(0.2))
+                    .overlay {
+                        Image(systemName: "mic.fill")
+                            .font(.largeTitle)
+                            .foregroundStyle(.gray)
+                    }
+            }
+            .frame(width: 150, height: 150)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+
+            if let author = viewModel.podcast.author {
+                Text(author)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            if let description = viewModel.podcast.description {
+                Text(description)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(3)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+            }
+        }
+        .padding(.top)
+    }
+
+    @ViewBuilder
+    var episodesSection: some View {
+        if viewModel.podcast.episodes.isEmpty {
+            ContentUnavailableView(
+                "Nenhum episodio",
+                systemImage: "headphones",
+                description: Text("Este podcast ainda nao possui episodios")
+            )
+        } else {
+            List(viewModel.podcast.episodes) { episode in
+                EpisodeRow(episode: episode)
+            }
+            .listStyle(.plain)
+        }
+    }
+}
+
+// MARK: - Episode Row
+
+private struct EpisodeRow: View {
+    let episode: Episode
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(episode.title)
+                .font(.headline)
+                .lineLimit(2)
+
+            HStack(spacing: 8) {
+                if let date = episode.publishedAt {
+                    Text(date, style: .date)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                if let duration = episode.duration {
+                    Text(formatDuration(duration))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    private func formatDuration(_ seconds: TimeInterval) -> String {
+        let minutes = Int(seconds) / 60
+        if minutes >= 60 {
+            let hours = minutes / 60
+            let remainingMinutes = minutes % 60
+            return "\(hours)h \(remainingMinutes)min"
+        }
+        return "\(minutes) min"
+    }
+}
+
+// MARK: - Previews
+
+#Preview("Com Podcast") {
+    NavigationStack {
+        PodcastDetailView(
+            viewModel: PodcastDetailViewModel(
+                podcast: Podcast(
+                    title: "Swift by Sundell",
+                    description: "Um podcast sobre desenvolvimento Swift e iOS com dicas e entrevistas.",
+                    author: "John Sundell",
+                    imageURL: URL(string: "https://example.com/image.jpg"),
+                    feedURL: URL(string: "https://swiftbysundell.com/feed")!,
+                    episodes: [
+                        Episode(title: "Episode 1: Getting Started with SwiftUI", duration: 3600, publishedAt: Date()),
+                        Episode(title: "Episode 2: Advanced Combine", duration: 2700, publishedAt: Date().addingTimeInterval(-86400))
+                    ]
+                )
+            )
+        )
+    }
+}
+
+#Preview("Sem Episodios") {
+    NavigationStack {
+        PodcastDetailView(
+            viewModel: PodcastDetailViewModel(
+                podcast: Podcast(
+                    title: "Novo Podcast",
+                    feedURL: URL(string: "https://example.com/feed")!
+                )
+            )
+        )
+    }
+}
