@@ -11,6 +11,7 @@ import SwiftData
 struct AddPodcastView: View {
     @State private var viewModel: AddPodcastViewModel
     @State private var inputText = ""
+    @State private var navigationPath = NavigationPath()
     @Query(sort: \FeedHistoryItem.addedAt, order: .reverse) private var feedHistory: [FeedHistoryItem]
 
     init(viewModel: AddPodcastViewModel) {
@@ -18,13 +19,34 @@ struct AddPodcastView: View {
     }
 
     var body: some View {
-        VStack(spacing: 16) {
-            headerView
-            inputSection
-            historyList
-            Spacer()
+        NavigationStack(path: $navigationPath) {
+            VStack(spacing: 16) {
+                headerView
+                inputSection
+                historyList
+                Spacer()
+            }
+            .padding()
+            .navigationDestination(for: Podcast.self) { podcast in
+                PodcastDetailView(
+                    viewModel: PodcastDetailViewModel(podcast: podcast)
+                )
+            }
         }
-        .padding()
+        .onChange(of: viewModel.loadedPodcast) { _, newPodcast in
+            if let podcast = newPodcast {
+                navigationPath.append(podcast)
+                viewModel.clearLoadedPodcast()
+            }
+        }
+        .alert("Erro", isPresented: .init(
+            get: { viewModel.errorMessage != nil },
+            set: { if !$0 { viewModel.errorMessage = nil } }
+        )) {
+            Button("OK") { }
+        } message: {
+            Text(viewModel.errorMessage ?? "")
+        }
     }
 }
 
@@ -45,6 +67,7 @@ private extension AddPodcastView {
             .textFieldStyle(.roundedBorder)
             .keyboardType(.URL)
             .autocapitalization(.none)
+            .disabled(viewModel.isLoading)
             .overlay(
                 RoundedRectangle(cornerRadius: 6)
                     .stroke(viewModel.shouldShowError(for: inputText) ? Color.red : Color.clear, lineWidth: 1)
@@ -56,12 +79,20 @@ private extension AddPodcastView {
                 .foregroundStyle(.red)
         }
 
-        Button("Carregar") {
+        Button {
             Task {
-                await viewModel.addURL(inputText, currentHistory: feedHistory)
+                await viewModel.loadFeed(inputText, currentHistory: feedHistory)
+            }
+        } label: {
+            if viewModel.isLoading {
+                ProgressView()
+                    .tint(.white)
+            } else {
+                Text("Carregar")
             }
         }
-        .disabled(!viewModel.isValidURL(inputText))
+        .frame(minWidth: 120)
+        .disabled(!viewModel.isValidURL(inputText) || viewModel.isLoading)
         .buttonStyle(.borderedProminent)
     }
 
@@ -91,7 +122,8 @@ private extension AddPodcastView {
         viewModel: AddPodcastViewModel(
             manageHistoryUseCase: ManageFeedHistoryUseCase(
                 repository: MockFeedHistoryRepository()
-            )
+            ),
+            feedService: MockFeedService()
         )
     )
     .modelContainer(for: FeedHistoryItem.self, inMemory: true)
@@ -117,7 +149,8 @@ private extension AddPodcastView {
         viewModel: AddPodcastViewModel(
             manageHistoryUseCase: ManageFeedHistoryUseCase(
                 repository: MockFeedHistoryRepository()
-            )
+            ),
+            feedService: MockFeedService()
         )
     )
     .modelContainer(container)
@@ -128,7 +161,8 @@ private extension AddPodcastView {
         @State private var viewModel = AddPodcastViewModel(
             manageHistoryUseCase: ManageFeedHistoryUseCase(
                 repository: MockFeedHistoryRepository()
-            )
+            ),
+            feedService: MockFeedService()
         )
         @State private var inputText = "invalid-url"
 
@@ -169,7 +203,8 @@ private extension AddPodcastView {
         @State private var viewModel = AddPodcastViewModel(
             manageHistoryUseCase: ManageFeedHistoryUseCase(
                 repository: MockFeedHistoryRepository()
-            )
+            ),
+            feedService: MockFeedService()
         )
         @State private var inputText = "https://feeds.simplecast.com/podcast"
 
@@ -204,7 +239,8 @@ private extension AddPodcastView {
         viewModel: AddPodcastViewModel(
             manageHistoryUseCase: ManageFeedHistoryUseCase(
                 repository: MockFeedHistoryRepository()
-            )
+            ),
+            feedService: MockFeedService()
         )
     )
     .modelContainer(for: FeedHistoryItem.self, inMemory: true)
@@ -216,7 +252,8 @@ private extension AddPodcastView {
         viewModel: AddPodcastViewModel(
             manageHistoryUseCase: ManageFeedHistoryUseCase(
                 repository: MockFeedHistoryRepository()
-            )
+            ),
+            feedService: MockFeedService()
         )
     )
     .modelContainer(for: FeedHistoryItem.self, inMemory: true)

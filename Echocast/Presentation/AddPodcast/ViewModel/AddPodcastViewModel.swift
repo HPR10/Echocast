@@ -12,13 +12,44 @@ import Observation
 @MainActor
 final class AddPodcastViewModel {
     private let manageHistoryUseCase: ManageFeedHistoryUseCase
+    private let feedService: FeedServiceProtocol
 
-    init(manageHistoryUseCase: ManageFeedHistoryUseCase) {
+    var isLoading = false
+    var loadedPodcast: Podcast?
+    var errorMessage: String?
+
+    init(
+        manageHistoryUseCase: ManageFeedHistoryUseCase,
+        feedService: FeedServiceProtocol = FeedService()
+    ) {
         self.manageHistoryUseCase = manageHistoryUseCase
+        self.feedService = feedService
     }
 
-    func addURL(_ url: String, currentHistory: [FeedHistoryItem]) async {
-        await manageHistoryUseCase.addURL(url, currentHistory: currentHistory)
+    func loadFeed(_ urlString: String, currentHistory: [FeedHistoryItem]) async {
+        guard let url = URL(string: urlString) else {
+            errorMessage = FeedError.invalidURL.errorDescription
+            return
+        }
+
+        isLoading = true
+        errorMessage = nil
+
+        do {
+            let podcast = try await feedService.fetchFeed(from: url)
+            await manageHistoryUseCase.addURL(urlString, currentHistory: currentHistory)
+            loadedPodcast = podcast
+        } catch let error as FeedError {
+            errorMessage = error.errorDescription
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+
+        isLoading = false
+    }
+
+    func clearLoadedPodcast() {
+        loadedPodcast = nil
     }
 
     // MARK: - Validation
@@ -31,7 +62,7 @@ final class AddPodcastViewModel {
 
         guard let urlObject = URL(string: url),
               let host = urlObject.host,
-              host.contains(".") else {  // Precisa ter ponto (TLD)
+              host.contains(".") else {
             return false
         }
 
