@@ -16,25 +16,25 @@ final class FeedHistoryRepository: FeedHistoryRepositoryProtocol {
         self.modelContext = modelContext
     }
 
-    func add(_ url: String) {
+    func add(_ url: String) async {
         let newItem = FeedHistoryItem(url: url)
         modelContext.insert(newItem)
         try? modelContext.save()
     }
 
-    func delete(_ item: FeedHistoryItem) {
+    func delete(_ item: FeedHistoryItem) async {
         modelContext.delete(item)
         try? modelContext.save()
     }
 
-    func findByURL(_ url: String) -> FeedHistoryItem? {
+    func findByURL(_ url: String) async -> FeedHistoryItem? {
         let descriptor = FetchDescriptor<FeedHistoryItem>(
             predicate: #Predicate { $0.url == url }
         )
         return try? modelContext.fetch(descriptor).first
     }
 
-    func deleteOldestExceeding(limit: Int, from items: [FeedHistoryItem]) {
+    func deleteOldestExceeding(limit: Int, from items: [FeedHistoryItem]) async {
         let excess = items.count - limit + 1
         guard excess > 0 else { return }
 

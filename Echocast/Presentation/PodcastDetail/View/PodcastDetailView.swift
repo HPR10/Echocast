@@ -8,11 +8,7 @@
 import SwiftUI
 
 struct PodcastDetailView: View {
-    @State private var viewModel: PodcastDetailViewModel
-
-    init(viewModel: PodcastDetailViewModel) {
-        self._viewModel = State(initialValue: viewModel)
-    }
+    let viewModel: PodcastDetailViewModel
 
     var body: some View {
         VStack(spacing: 24) {
@@ -20,7 +16,7 @@ struct PodcastDetailView: View {
             episodesSection
         }
         .navigationTitle(viewModel.podcast.title)
-        .navigationBarTitleDisplayMode(.large)
+        .toolbarTitleDisplayMode(.large)
     }
 }
 
@@ -155,3 +151,4 @@ private struct EpisodeRow: View {
         )
     }
 }
+

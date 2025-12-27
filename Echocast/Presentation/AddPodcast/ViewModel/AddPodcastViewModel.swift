@@ -12,22 +12,23 @@ import Observation
 @MainActor
 final class AddPodcastViewModel {
     private let manageHistoryUseCase: ManageFeedHistoryUseCase
-    private let feedService: FeedServiceProtocol
+    private let loadPodcastUseCase: LoadPodcastFromRSSUseCase
 
+    var inputText = ""
     var isLoading = false
     var loadedPodcast: Podcast?
     var errorMessage: String?
 
     init(
         manageHistoryUseCase: ManageFeedHistoryUseCase,
-        feedService: FeedServiceProtocol = FeedService()
+        loadPodcastUseCase: LoadPodcastFromRSSUseCase
     ) {
         self.manageHistoryUseCase = manageHistoryUseCase
-        self.feedService = feedService
+        self.loadPodcastUseCase = loadPodcastUseCase
     }
 
-    func loadFeed(_ urlString: String, currentHistory: [FeedHistoryItem]) async {
-        guard let url = URL(string: urlString) else {
+    func loadFeed(currentHistory: [FeedHistoryItem]) async {
+        guard let url = URL(string: inputText) else {
             errorMessage = FeedError.invalidURL.errorDescription
             return
         }
@@ -36,8 +37,8 @@ final class AddPodcastViewModel {
         errorMessage = nil
 
         do {
-            let podcast = try await feedService.fetchFeed(from: url)
-            await manageHistoryUseCase.addURL(urlString, currentHistory: currentHistory)
+            let podcast = try await loadPodcastUseCase.execute(from: url)
+            await manageHistoryUseCase.addURL(inputText, currentHistory: currentHistory)
             loadedPodcast = podcast
         } catch let error as FeedError {
             errorMessage = error.errorDescription
@@ -76,20 +77,22 @@ final class AddPodcastViewModel {
         return true
     }
 
-    func shouldShowError(for url: String) -> Bool {
-        !url.isEmpty &&
-        url.count > 8 &&
-        !isValidURL(url)
+    func shouldShowError(for url: String? = nil) -> Bool {
+        let value = url ?? inputText
+        return !value.isEmpty &&
+        value.count > 8 &&
+        !isValidURL(value)
     }
 
-    func validationError(for url: String) -> String? {
-        guard !url.isEmpty else { return nil }
+    func validationError(for url: String? = nil) -> String? {
+        let value = url ?? inputText
+        guard !value.isEmpty else { return nil }
 
-        if !url.hasPrefix("http://") && !url.hasPrefix("https://") {
+        if !value.hasPrefix("http://") && !value.hasPrefix("https://") {
             return "URL deve começar com http:// ou https://"
         }
 
-        if !isValidURL(url) {
+        if !isValidURL(value) {
             return "URL inválida. Exemplo: https://podcast.com/feed"
         }
 

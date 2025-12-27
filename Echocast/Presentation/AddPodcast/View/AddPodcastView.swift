@@ -7,18 +7,20 @@
 
 import SwiftUI
 import SwiftData
+import Observation
 
 struct AddPodcastView: View {
     @State private var viewModel: AddPodcastViewModel
-    @State private var inputText = ""
     @State private var navigationPath = NavigationPath()
     @Query(sort: \FeedHistoryItem.addedAt, order: .reverse) private var feedHistory: [FeedHistoryItem]
 
     init(viewModel: AddPodcastViewModel) {
-        self._viewModel = State(initialValue: viewModel)
+        _viewModel = State(initialValue: viewModel)
     }
 
     var body: some View {
+        @Bindable var viewModel = viewModel
+
         NavigationStack(path: $navigationPath) {
             VStack(spacing: 16) {
                 headerView
@@ -63,17 +65,21 @@ private extension AddPodcastView {
 
     @ViewBuilder
     var inputSection: some View {
-        TextField("URL do RSS", text: $inputText)
+        @Bindable var viewModel = viewModel
+
+        TextField("URL do RSS", text: $viewModel.inputText)
             .textFieldStyle(.roundedBorder)
             .keyboardType(.URL)
-            .autocapitalization(.none)
+            .textInputAutocapitalization(.never)
+            .autocorrectionDisabled(true)
+            .textContentType(.URL)
             .disabled(viewModel.isLoading)
             .overlay(
                 RoundedRectangle(cornerRadius: 6)
-                    .stroke(viewModel.shouldShowError(for: inputText) ? Color.red : Color.clear, lineWidth: 1)
+                    .stroke(viewModel.shouldShowError() ? Color.red : Color.clear, lineWidth: 1)
             )
 
-        if viewModel.shouldShowError(for: inputText), let error = viewModel.validationError(for: inputText) {
+        if viewModel.shouldShowError(), let error = viewModel.validationError() {
             Text(error)
                 .font(.caption)
                 .foregroundStyle(.red)
@@ -81,7 +87,7 @@ private extension AddPodcastView {
 
         Button {
             Task {
-                await viewModel.loadFeed(inputText, currentHistory: feedHistory)
+                await viewModel.loadFeed(currentHistory: feedHistory)
             }
         } label: {
             if viewModel.isLoading {
@@ -92,12 +98,14 @@ private extension AddPodcastView {
             }
         }
         .frame(minWidth: 120)
-        .disabled(!viewModel.isValidURL(inputText) || viewModel.isLoading)
+        .disabled(!viewModel.isValidURL(viewModel.inputText) || viewModel.isLoading)
         .buttonStyle(.borderedProminent)
     }
 
     @ViewBuilder
     var historyList: some View {
+        @Bindable var viewModel = viewModel
+
         if feedHistory.isEmpty {
             ContentUnavailableView(
                 "Nenhum histórico",
@@ -105,10 +113,13 @@ private extension AddPodcastView {
             )
         } else {
             List(feedHistory) { item in
-                Text(item.url)
-                    .onTapGesture {
-                        inputText = item.url
-                    }
+                Button {
+                    viewModel.inputText = item.url
+                } label: {
+                    Text(item.url)
+                        .foregroundStyle(.primary)
+                }
+                .buttonStyle(.plain)
             }
             .listStyle(.plain)
         }
@@ -123,7 +134,9 @@ private extension AddPodcastView {
             manageHistoryUseCase: ManageFeedHistoryUseCase(
                 repository: MockFeedHistoryRepository()
             ),
-            feedService: MockFeedService()
+            loadPodcastUseCase: LoadPodcastFromRSSUseCase(
+                feedService: MockFeedService()
+            )
         )
     )
     .modelContainer(for: FeedHistoryItem.self, inMemory: true)
@@ -150,7 +163,9 @@ private extension AddPodcastView {
             manageHistoryUseCase: ManageFeedHistoryUseCase(
                 repository: MockFeedHistoryRepository()
             ),
-            feedService: MockFeedService()
+            loadPodcastUseCase: LoadPodcastFromRSSUseCase(
+                feedService: MockFeedService()
+            )
         )
     )
     .modelContainer(container)
@@ -162,31 +177,38 @@ private extension AddPodcastView {
             manageHistoryUseCase: ManageFeedHistoryUseCase(
                 repository: MockFeedHistoryRepository()
             ),
-            feedService: MockFeedService()
+            loadPodcastUseCase: LoadPodcastFromRSSUseCase(
+                feedService: MockFeedService()
+            )
         )
-        @State private var inputText = "invalid-url"
 
         var body: some View {
+            @Bindable var viewModel = viewModel
+
             VStack(spacing: 16) {
                 Text("URL do Podcast")
                     .font(.title2)
                     .fontWeight(.bold)
 
-                TextField("URL do RSS", text: $inputText)
+                TextField("URL do RSS", text: $viewModel.inputText)
                     .textFieldStyle(.roundedBorder)
+                    .keyboardType(.URL)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled(true)
+                    .textContentType(.URL)
                     .overlay(
                         RoundedRectangle(cornerRadius: 6)
-                            .stroke(viewModel.shouldShowError(for: inputText) ? Color.red : Color.clear, lineWidth: 1)
+                            .stroke(viewModel.shouldShowError() ? Color.red : Color.clear, lineWidth: 1)
                     )
 
-                if viewModel.shouldShowError(for: inputText), let error = viewModel.validationError(for: inputText) {
+                if viewModel.shouldShowError(), let error = viewModel.validationError() {
                     Text(error)
                         .font(.caption)
                         .foregroundStyle(.red)
                 }
 
                 Button("Carregar") {}
-                    .disabled(!viewModel.isValidURL(inputText))
+                    .disabled(!viewModel.isValidURL(viewModel.inputText))
                     .buttonStyle(.borderedProminent)
 
                 Spacer()
@@ -204,25 +226,32 @@ private extension AddPodcastView {
             manageHistoryUseCase: ManageFeedHistoryUseCase(
                 repository: MockFeedHistoryRepository()
             ),
-            feedService: MockFeedService()
+            loadPodcastUseCase: LoadPodcastFromRSSUseCase(
+                feedService: MockFeedService()
+            )
         )
-        @State private var inputText = "https://feeds.simplecast.com/podcast"
 
         var body: some View {
+            @Bindable var viewModel = viewModel
+
             VStack(spacing: 16) {
                 Text("URL do Podcast")
                     .font(.title2)
                     .fontWeight(.bold)
 
-                TextField("URL do RSS", text: $inputText)
+                TextField("URL do RSS", text: $viewModel.inputText)
                     .textFieldStyle(.roundedBorder)
+                    .keyboardType(.URL)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled(true)
+                    .textContentType(.URL)
                     .overlay(
                         RoundedRectangle(cornerRadius: 6)
-                            .stroke(viewModel.shouldShowError(for: inputText) ? Color.red : Color.clear, lineWidth: 1)
+                            .stroke(viewModel.shouldShowError() ? Color.red : Color.clear, lineWidth: 1)
                     )
 
                 Button("Carregar") {}
-                    .disabled(!viewModel.isValidURL(inputText))
+                    .disabled(!viewModel.isValidURL(viewModel.inputText))
                     .buttonStyle(.borderedProminent)
 
                 Spacer()
@@ -240,7 +269,9 @@ private extension AddPodcastView {
             manageHistoryUseCase: ManageFeedHistoryUseCase(
                 repository: MockFeedHistoryRepository()
             ),
-            feedService: MockFeedService()
+            loadPodcastUseCase: LoadPodcastFromRSSUseCase(
+                feedService: MockFeedService()
+            )
         )
     )
     .modelContainer(for: FeedHistoryItem.self, inMemory: true)
@@ -253,7 +284,9 @@ private extension AddPodcastView {
             manageHistoryUseCase: ManageFeedHistoryUseCase(
                 repository: MockFeedHistoryRepository()
             ),
-            feedService: MockFeedService()
+            loadPodcastUseCase: LoadPodcastFromRSSUseCase(
+                feedService: MockFeedService()
+            )
         )
     )
     .modelContainer(for: FeedHistoryItem.self, inMemory: true)
