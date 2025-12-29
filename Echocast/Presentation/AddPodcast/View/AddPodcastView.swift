@@ -22,11 +22,19 @@ struct AddPodcastView: View {
         @Bindable var viewModel = viewModel
 
         NavigationStack(path: $navigationPath) {
-            VStack(spacing: 16) {
-                headerView
-                inputSection
-                historyList
-                Spacer()
+            ZStack {
+                VStack(spacing: 16) {
+                    headerView
+                    inputSection
+                    historyList
+                    Spacer()
+                }
+                .opacity(viewModel.isLoading ? 0 : 1)
+                .allowsHitTesting(!viewModel.isLoading)
+
+                if viewModel.isLoading {
+                    loadingOverlay
+                }
             }
             .padding()
             .navigationDestination(for: Podcast.self) { podcast in
@@ -34,6 +42,7 @@ struct AddPodcastView: View {
                     viewModel: PodcastDetailViewModel(podcast: podcast)
                 )
             }
+            .animation(.easeInOut(duration: 0.2), value: viewModel.isLoading)
         }
         .onChange(of: viewModel.loadedPodcast) { _, newPodcast in
             if let podcast = newPodcast {
@@ -123,6 +132,23 @@ private extension AddPodcastView {
                 .buttonStyle(.plain)
             }
             .listStyle(.plain)
+        }
+    }
+
+    @ViewBuilder
+    var loadingOverlay: some View {
+        ZStack {
+            Color(.systemBackground)
+                .ignoresSafeArea()
+
+            VStack(spacing: 12) {
+                ProgressView()
+                    .controlSize(.large)
+                Text("Carregando...")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .transition(.opacity)
         }
     }
 }
