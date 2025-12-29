@@ -12,7 +12,7 @@ import XMLKit
 final class FeedService: FeedServiceProtocol {
     private let urlSession: URLSession
 
-    init(urlSession: URLSession = .shared) {
+    init(urlSession: URLSession = FeedService.defaultSession()) {
         self.urlSession = urlSession
     }
 
@@ -33,6 +33,16 @@ final class FeedService: FeedServiceProtocol {
     }
 
     // MARK: - Private
+
+    private static func defaultSession() -> URLSession {
+        let configuration = URLSessionConfiguration.default
+        configuration.timeoutIntervalForRequest = 15
+        configuration.timeoutIntervalForResource = 30
+        configuration.httpAdditionalHeaders = [
+            "User-Agent": "Echocast/1.0 (iOS)"
+        ]
+        return URLSession(configuration: configuration)
+    }
 
     private func mapRSSFeed(_ rss: RSSFeed, feedURL: URL) -> Podcast {
         guard let channel = rss.channel else {
