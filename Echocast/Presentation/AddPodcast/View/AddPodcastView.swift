@@ -87,7 +87,7 @@ private extension AddPodcastView {
 
         Button {
             Task {
-                await viewModel.loadFeed(currentHistory: feedHistory)
+                await viewModel.loadFeed()
             }
         } label: {
             if viewModel.isLoading {

@@ -13,5 +13,5 @@ final class MockFeedHistoryRepository: FeedHistoryRepositoryProtocol {
     func add(_ url: String) async {}
     func delete(_ item: FeedHistoryItem) async {}
     func findByURL(_ url: String) async -> FeedHistoryItem? { nil }
-    func deleteOldestExceeding(limit: Int, from items: [FeedHistoryItem]) async {}
+    func deleteOldestExceeding(limit: Int) async {}
 }

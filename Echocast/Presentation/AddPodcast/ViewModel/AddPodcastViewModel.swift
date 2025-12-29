@@ -27,7 +27,7 @@ final class AddPodcastViewModel {
         self.loadPodcastUseCase = loadPodcastUseCase
     }
 
-    func loadFeed(currentHistory: [FeedHistoryItem]) async {
+    func loadFeed() async {
         guard let url = normalizedFeedURL(from: inputText) else {
             errorMessage = FeedError.invalidURL.errorDescription
             return
@@ -38,7 +38,7 @@ final class AddPodcastViewModel {
 
         do {
             let podcast = try await loadPodcastUseCase.execute(from: url)
-            await manageHistoryUseCase.addURL(url.absoluteString, currentHistory: currentHistory)
+            await manageHistoryUseCase.addURL(url.absoluteString)
             loadedPodcast = podcast
         } catch let error as FeedError {
             errorMessage = error.errorDescription

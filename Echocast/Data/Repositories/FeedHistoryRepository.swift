@@ -34,12 +34,16 @@ final class FeedHistoryRepository: FeedHistoryRepositoryProtocol {
         return try? modelContext.fetch(descriptor).first
     }
 
-    func deleteOldestExceeding(limit: Int, from items: [FeedHistoryItem]) async {
-        let excess = items.count - limit + 1
+    func deleteOldestExceeding(limit: Int) async {
+        let descriptor = FetchDescriptor<FeedHistoryItem>(
+            sortBy: [SortDescriptor(\.addedAt, order: .forward)]
+        )
+        guard let items = try? modelContext.fetch(descriptor) else { return }
+
+        let excess = items.count - limit
         guard excess > 0 else { return }
 
-        let sortedByDate = items.sorted { $0.addedAt < $1.addedAt }
-        for item in sortedByDate.prefix(excess) {
+        for item in items.prefix(excess) {
             modelContext.delete(item)
         }
         try? modelContext.save()

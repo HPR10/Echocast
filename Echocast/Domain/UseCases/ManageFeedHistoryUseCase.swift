@@ -17,7 +17,7 @@ final class ManageFeedHistoryUseCase {
         self.maxItems = maxItems
     }
 
-    func addURL(_ url: String, currentHistory: [FeedHistoryItem]) async {
+    func addURL(_ url: String) async {
         guard !url.isEmpty else { return }
 
         if let existing = await repository.findByURL(url) {
@@ -26,6 +26,6 @@ final class ManageFeedHistoryUseCase {
 
         await repository.add(url)
 
-        await repository.deleteOldestExceeding(limit: maxItems, from: currentHistory)
+        await repository.deleteOldestExceeding(limit: maxItems)
     }
 }
