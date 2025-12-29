@@ -41,6 +41,9 @@ struct AddPodcastView: View {
                 viewModel.clearLoadedPodcast()
             }
         }
+        .onDisappear {
+            viewModel.cancelLoad()
+        }
         .alert("Erro", isPresented: .init(
             get: { viewModel.errorMessage != nil },
             set: { if !$0 { viewModel.errorMessage = nil } }

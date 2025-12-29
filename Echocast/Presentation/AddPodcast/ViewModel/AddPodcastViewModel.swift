@@ -43,6 +43,13 @@ final class AddPodcastViewModel {
         loadedPodcast = nil
     }
 
+    func cancelLoad() {
+        loadTask?.cancel()
+        loadTask = nil
+        activeLoadID = nil
+        isLoading = false
+    }
+
     // MARK: - Validation
 
     func isValidURL(_ url: String) -> Bool {
