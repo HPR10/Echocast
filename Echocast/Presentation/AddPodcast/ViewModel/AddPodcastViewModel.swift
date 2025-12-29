@@ -13,6 +13,8 @@ import Observation
 final class AddPodcastViewModel {
     private let manageHistoryUseCase: ManageFeedHistoryUseCase
     private let loadPodcastUseCase: LoadPodcastFromRSSUseCase
+    private var loadTask: Task<Void, Never>?
+    private var activeLoadID: UUID?
 
     var inputText = ""
     var isLoading = false
@@ -27,26 +29,14 @@ final class AddPodcastViewModel {
         self.loadPodcastUseCase = loadPodcastUseCase
     }
 
-    func loadFeed() async {
-        guard let url = normalizedFeedURL(from: inputText) else {
-            errorMessage = FeedError.invalidURL.errorDescription
-            return
+    func loadFeed() {
+        let requestID = UUID()
+        activeLoadID = requestID
+        loadTask?.cancel()
+
+        loadTask = Task { @MainActor in
+            await performLoad(requestID: requestID)
         }
-
-        isLoading = true
-        errorMessage = nil
-
-        do {
-            let podcast = try await loadPodcastUseCase.execute(from: url)
-            await manageHistoryUseCase.addURL(url.absoluteString)
-            loadedPodcast = podcast
-        } catch let error as FeedError {
-            errorMessage = error.errorDescription
-        } catch {
-            errorMessage = error.localizedDescription
-        }
-
-        isLoading = false
     }
 
     func clearLoadedPodcast() {
@@ -75,6 +65,47 @@ final class AddPodcastViewModel {
         }
 
         return nil
+    }
+
+    private func performLoad(requestID: UUID) async {
+        guard let url = normalizedFeedURL(from: inputText) else {
+            if activeLoadID == requestID {
+                errorMessage = FeedError.invalidURL.errorDescription
+            }
+            return
+        }
+
+        isLoading = true
+        errorMessage = nil
+
+        defer {
+            if activeLoadID == requestID {
+                isLoading = false
+                loadTask = nil
+            }
+        }
+
+        do {
+            let podcast = try await loadPodcastUseCase.execute(from: url)
+            guard isActive(requestID) else { return }
+            await manageHistoryUseCase.addURL(url.absoluteString)
+            guard isActive(requestID) else { return }
+            loadedPodcast = podcast
+        } catch is CancellationError {
+            return
+        } catch let error as FeedError {
+            if isActive(requestID) {
+                errorMessage = error.errorDescription
+            }
+        } catch {
+            if isActive(requestID) {
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    private func isActive(_ requestID: UUID) -> Bool {
+        activeLoadID == requestID && !Task.isCancelled
     }
 
     private func normalizedFeedURL(from input: String) -> URL? {

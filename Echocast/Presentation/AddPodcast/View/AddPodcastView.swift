@@ -86,9 +86,7 @@ private extension AddPodcastView {
         }
 
         Button {
-            Task {
-                await viewModel.loadFeed()
-            }
+            viewModel.loadFeed()
         } label: {
             if viewModel.isLoading {
                 ProgressView()
