@@ -200,14 +200,18 @@ private extension AddPodcastView {
 
 #Preview("URL Inválida") {
     struct InvalidURLPreview: View {
-        @State private var viewModel = AddPodcastViewModel(
-            manageHistoryUseCase: ManageFeedHistoryUseCase(
-                repository: MockFeedHistoryRepository()
-            ),
-            loadPodcastUseCase: LoadPodcastFromRSSUseCase(
-                feedService: MockFeedService()
+        @State private var viewModel: AddPodcastViewModel = {
+            let viewModel = AddPodcastViewModel(
+                manageHistoryUseCase: ManageFeedHistoryUseCase(
+                    repository: MockFeedHistoryRepository()
+                ),
+                loadPodcastUseCase: LoadPodcastFromRSSUseCase(
+                    feedService: MockFeedService()
+                )
             )
-        )
+            viewModel.inputText = "http://podcast"
+            return viewModel
+        }()
 
         var body: some View {
             @Bindable var viewModel = viewModel
@@ -249,14 +253,18 @@ private extension AddPodcastView {
 
 #Preview("URL Válida") {
     struct ValidURLPreview: View {
-        @State private var viewModel = AddPodcastViewModel(
-            manageHistoryUseCase: ManageFeedHistoryUseCase(
-                repository: MockFeedHistoryRepository()
-            ),
-            loadPodcastUseCase: LoadPodcastFromRSSUseCase(
-                feedService: MockFeedService()
+        @State private var viewModel: AddPodcastViewModel = {
+            let viewModel = AddPodcastViewModel(
+                manageHistoryUseCase: ManageFeedHistoryUseCase(
+                    repository: MockFeedHistoryRepository()
+                ),
+                loadPodcastUseCase: LoadPodcastFromRSSUseCase(
+                    feedService: MockFeedService()
+                )
             )
-        )
+            viewModel.inputText = "https://feeds.simplecast.com/54nAGcIl"
+            return viewModel
+        }()
 
         var body: some View {
             @Bindable var viewModel = viewModel
