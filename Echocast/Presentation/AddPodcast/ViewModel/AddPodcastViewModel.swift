@@ -28,7 +28,7 @@ final class AddPodcastViewModel {
     }
 
     func loadFeed(currentHistory: [FeedHistoryItem]) async {
-        guard let url = URL(string: inputText) else {
+        guard let url = normalizedFeedURL(from: inputText) else {
             errorMessage = FeedError.invalidURL.errorDescription
             return
         }
@@ -38,7 +38,7 @@ final class AddPodcastViewModel {
 
         do {
             let podcast = try await loadPodcastUseCase.execute(from: url)
-            await manageHistoryUseCase.addURL(inputText, currentHistory: currentHistory)
+            await manageHistoryUseCase.addURL(url.absoluteString, currentHistory: currentHistory)
             loadedPodcast = podcast
         } catch let error as FeedError {
             errorMessage = error.errorDescription
@@ -56,25 +56,7 @@ final class AddPodcastViewModel {
     // MARK: - Validation
 
     func isValidURL(_ url: String) -> Bool {
-        guard !url.isEmpty else { return false }
-        guard url.hasPrefix("http://") || url.hasPrefix("https://") else {
-            return false
-        }
-
-        guard let urlObject = URL(string: url),
-              let host = urlObject.host,
-              host.contains(".") else {
-            return false
-        }
-
-        let components = host.components(separatedBy: ".")
-        guard components.count >= 2,
-              let tld = components.last,
-              tld.count >= 2 else {
-            return false
-        }
-
-        return true
+        normalizedFeedURL(from: url) != nil
     }
 
     func shouldShowError(for url: String? = nil) -> Bool {
@@ -88,14 +70,47 @@ final class AddPodcastViewModel {
         let value = url ?? inputText
         guard !value.isEmpty else { return nil }
 
-        if !value.hasPrefix("http://") && !value.hasPrefix("https://") {
-            return "URL deve começar com http:// ou https://"
-        }
-
         if !isValidURL(value) {
-            return "URL inválida. Exemplo: https://podcast.com/feed"
+            return "URL inválida. Use http(s):// ou feed:// e inclua o caminho do feed."
         }
 
         return nil
+    }
+
+    private func normalizedFeedURL(from input: String) -> URL? {
+        let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+
+        let candidate = trimmed.contains("://") ? trimmed : "https://\(trimmed)"
+        guard var components = URLComponents(string: candidate) else { return nil }
+
+        if let scheme = components.scheme?.lowercased() {
+            switch scheme {
+            case "http", "https":
+                break
+            case "feed":
+                components.scheme = "https"
+            case "feed+http":
+                components.scheme = "http"
+            case "feed+https":
+                components.scheme = "https"
+            default:
+                return nil
+            }
+        } else {
+            components.scheme = "https"
+        }
+
+        guard let url = components.url,
+              let host = components.host,
+              !host.isEmpty else {
+            return nil
+        }
+
+        let hasPath = !(url.path.isEmpty || url.path == "/")
+        let hasQuery = !(url.query?.isEmpty ?? true)
+        guard hasPath || hasQuery else { return nil }
+
+        return url
     }
 }
