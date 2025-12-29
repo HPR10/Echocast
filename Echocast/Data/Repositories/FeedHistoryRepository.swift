@@ -19,12 +19,12 @@ final class FeedHistoryRepository: FeedHistoryRepositoryProtocol {
     func add(_ url: String) async {
         let newItem = FeedHistoryItem(url: url)
         modelContext.insert(newItem)
-        try? modelContext.save()
+        saveContext(action: "add")
     }
 
     func delete(_ item: FeedHistoryItem) async {
         modelContext.delete(item)
-        try? modelContext.save()
+        saveContext(action: "delete")
     }
 
     func findByURL(_ url: String) async -> FeedHistoryItem? {
@@ -46,6 +46,14 @@ final class FeedHistoryRepository: FeedHistoryRepositoryProtocol {
         for item in items.prefix(excess) {
             modelContext.delete(item)
         }
-        try? modelContext.save()
+        saveContext(action: "deleteOldestExceeding")
+    }
+
+    private func saveContext(action: String) {
+        do {
+            try modelContext.save()
+        } catch {
+            print("FeedHistoryRepository failed to \(action): \(error)")
+        }
     }
 }
