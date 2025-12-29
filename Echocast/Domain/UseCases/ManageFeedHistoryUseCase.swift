@@ -2,7 +2,7 @@
 //  ManageFeedHistoryUseCase.swift
 //  Echocast
 //
-//  Created by actdigital on 14/12/25.
+//  Created by Hugo Pinheiro on 14/12/25.
 //
 
 import Foundation

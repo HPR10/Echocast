@@ -2,7 +2,7 @@
 //  EchocastApp.swift
 //  Echocast
 //
-//  Created by actdigital on 10/12/25.
+//  Created by Hugo Pinheiro on 10/12/25.
 //
 
 import SwiftUI
