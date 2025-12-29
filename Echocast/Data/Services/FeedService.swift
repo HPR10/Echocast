@@ -54,7 +54,7 @@ final class FeedService: FeedServiceProtocol {
 
             return Episode(
                 title: title,
-                description: item.description,
+                description: plainText(from: item.description),
                 audioURL: item.enclosure?.attributes?.url.flatMap(URL.init),
                 duration: item.iTunes?.duration,
                 publishedAt: item.pubDate
@@ -63,12 +63,29 @@ final class FeedService: FeedServiceProtocol {
 
         return Podcast(
             title: channel.title ?? "Sem titulo",
-            description: channel.description,
+            description: plainText(from: channel.description),
             author: channel.iTunes?.author ?? channel.managingEditor,
             imageURL: channel.iTunes?.image?.attributes?.href.flatMap(URL.init)
                 ?? channel.image?.url.flatMap(URL.init),
             feedURL: feedURL,
             episodes: episodes
         )
+    }
+
+    private func plainText(from html: String?) -> String? {
+        guard let html, !html.isEmpty else { return nil }
+        let stripped = html
+            .replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression)
+        let decoded = stripped
+            .replacingOccurrences(of: "&nbsp;", with: " ")
+            .replacingOccurrences(of: "&amp;", with: "&")
+            .replacingOccurrences(of: "&quot;", with: "\"")
+            .replacingOccurrences(of: "&#39;", with: "'")
+            .replacingOccurrences(of: "&lt;", with: "<")
+            .replacingOccurrences(of: "&gt;", with: ">")
+        let normalized = decoded
+            .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return normalized.isEmpty ? nil : normalized
     }
 }

@@ -53,7 +53,6 @@ private extension PodcastDetailView {
                 Text(description)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .lineLimit(3)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
             }
@@ -88,6 +87,13 @@ private struct EpisodeRow: View {
             Text(episode.title)
                 .font(.headline)
                 .lineLimit(2)
+
+            if let description = episode.description, !description.isEmpty {
+                Text(description)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(3)
+            }
 
             HStack(spacing: 8) {
                 if let date = episode.publishedAt {
@@ -151,4 +157,3 @@ private struct EpisodeRow: View {
         )
     }
 }
-
