@@ -18,6 +18,14 @@ struct PodcastDetailView: View {
         }
         .navigationTitle(viewModel.podcast.title)
         .toolbarTitleDisplayMode(.large)
+        .navigationDestination(for: Episode.self) { episode in
+            PlayerView(
+                viewModel: PlayerViewModel(
+                    episode: episode,
+                    podcastTitle: viewModel.podcast.title
+                )
+            )
+        }
     }
 }
 
@@ -75,7 +83,9 @@ private extension PodcastDetailView {
             )
         } else {
             List(viewModel.podcast.episodes) { episode in
-                EpisodeRow(episode: episode)
+                NavigationLink(value: episode) {
+                    EpisodeRow(episode: episode)
+                }
             }
             .listStyle(.plain)
         }
@@ -127,6 +137,7 @@ private struct EpisodeRow: View {
         return "\(minutes) min"
     }
 }
+
 
 // MARK: - Previews
 
