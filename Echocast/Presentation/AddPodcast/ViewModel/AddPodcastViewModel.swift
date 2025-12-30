@@ -14,6 +14,7 @@ final class AddPodcastViewModel {
     private let manageHistoryUseCase: ManageFeedHistoryUseCase
     private let loadPodcastUseCase: LoadPodcastFromRSSUseCase
     private let clearFeedCacheUseCase: ClearFeedCacheUseCase
+    private let clearImageCacheUseCase: ClearImageCacheUseCase
     private var loadTask: Task<Void, Never>?
     private var activeLoadID: UUID?
 
@@ -25,11 +26,13 @@ final class AddPodcastViewModel {
     init(
         manageHistoryUseCase: ManageFeedHistoryUseCase,
         loadPodcastUseCase: LoadPodcastFromRSSUseCase,
-        clearFeedCacheUseCase: ClearFeedCacheUseCase
+        clearFeedCacheUseCase: ClearFeedCacheUseCase,
+        clearImageCacheUseCase: ClearImageCacheUseCase
     ) {
         self.manageHistoryUseCase = manageHistoryUseCase
         self.loadPodcastUseCase = loadPodcastUseCase
         self.clearFeedCacheUseCase = clearFeedCacheUseCase
+        self.clearImageCacheUseCase = clearImageCacheUseCase
     }
 
     func loadFeed() {
@@ -55,6 +58,7 @@ final class AddPodcastViewModel {
 
     func clearCache() async {
         await clearFeedCacheUseCase.execute()
+        await clearImageCacheUseCase.execute()
     }
 
     // MARK: - Validation

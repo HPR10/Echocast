@@ -17,6 +17,8 @@ struct EchocastApp: App {
         do {
             container = try ModelContainer(for: FeedHistoryItem.self)
             let feedService = FeedService()
+            let imageCacheService = ImageCacheService()
+            imageCacheService.configureSharedPipeline()
             addPodcastViewModel = AddPodcastViewModel(
                 manageHistoryUseCase: ManageFeedHistoryUseCase(
                     repository: FeedHistoryRepository(
@@ -28,6 +30,9 @@ struct EchocastApp: App {
                 ),
                 clearFeedCacheUseCase: ClearFeedCacheUseCase(
                     feedService: feedService
+                ),
+                clearImageCacheUseCase: ClearImageCacheUseCase(
+                    imageCacheService: imageCacheService
                 )
             )
         } catch {

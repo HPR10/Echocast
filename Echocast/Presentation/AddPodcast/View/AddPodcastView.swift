@@ -71,7 +71,7 @@ struct AddPodcastView: View {
             Text(viewModel.errorMessage ?? "")
         }
         .confirmationDialog(
-            "Limpar cache de RSS?",
+            "Limpar cache de RSS e imagens?",
             isPresented: $showClearCacheConfirmation,
             titleVisibility: .visible
         ) {
@@ -82,7 +82,7 @@ struct AddPodcastView: View {
             }
             Button("Cancelar", role: .cancel) { }
         } message: {
-            Text("Remove o cache e força uma nova busca do feed.")
+            Text("Remove os caches e força uma nova busca do feed.")
         }
     }
 }
@@ -189,6 +189,9 @@ private extension AddPodcastView {
             ),
             clearFeedCacheUseCase: ClearFeedCacheUseCase(
                 feedService: MockFeedService()
+            ),
+            clearImageCacheUseCase: ClearImageCacheUseCase(
+                imageCacheService: MockImageCacheService()
             )
         )
     )
@@ -221,6 +224,9 @@ private extension AddPodcastView {
             ),
             clearFeedCacheUseCase: ClearFeedCacheUseCase(
                 feedService: MockFeedService()
+            ),
+            clearImageCacheUseCase: ClearImageCacheUseCase(
+                imageCacheService: MockImageCacheService()
             )
         )
     )
@@ -239,6 +245,9 @@ private extension AddPodcastView {
                 ),
                 clearFeedCacheUseCase: ClearFeedCacheUseCase(
                     feedService: MockFeedService()
+                ),
+                clearImageCacheUseCase: ClearImageCacheUseCase(
+                    imageCacheService: MockImageCacheService()
                 )
             )
             viewModel.inputText = "http://podcast"
@@ -295,6 +304,9 @@ private extension AddPodcastView {
                 ),
                 clearFeedCacheUseCase: ClearFeedCacheUseCase(
                     feedService: MockFeedService()
+                ),
+                clearImageCacheUseCase: ClearImageCacheUseCase(
+                    imageCacheService: MockImageCacheService()
                 )
             )
             viewModel.inputText = "https://feeds.simplecast.com/54nAGcIl"
@@ -344,6 +356,9 @@ private extension AddPodcastView {
             ),
             clearFeedCacheUseCase: ClearFeedCacheUseCase(
                 feedService: MockFeedService()
+            ),
+            clearImageCacheUseCase: ClearImageCacheUseCase(
+                imageCacheService: MockImageCacheService()
             )
         )
     )
@@ -362,6 +377,9 @@ private extension AddPodcastView {
             ),
             clearFeedCacheUseCase: ClearFeedCacheUseCase(
                 feedService: MockFeedService()
+            ),
+            clearImageCacheUseCase: ClearImageCacheUseCase(
+                imageCacheService: MockImageCacheService()
             )
         )
     )
