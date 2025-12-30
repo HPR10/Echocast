@@ -25,13 +25,25 @@ final class FeedService: FeedServiceProtocol {
         if let cachedData = await cache.load(for: url) {
             do {
                 let feed = try RSSFeed(data: cachedData)
-                return mapRSSFeed(feed, feedURL: url)
+                let podcast = try mapRSSFeed(feed, feedURL: url)
+                return podcast
             } catch {
                 await cache.remove(for: url)
             }
         }
 
-        let (data, response) = try await urlSession.data(from: url)
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await urlSession.data(from: url)
+        } catch let error as URLError {
+            if error.code == .timedOut {
+                throw FeedError.timeout
+            }
+            throw FeedError.networkError(error)
+        } catch {
+            throw FeedError.networkError(error)
+        }
 
         guard let httpResponse = response as? HTTPURLResponse,
               (200...299).contains(httpResponse.statusCode) else {
@@ -40,8 +52,11 @@ final class FeedService: FeedServiceProtocol {
 
         do {
             let feed = try RSSFeed(data: data)
+            let podcast = try mapRSSFeed(feed, feedURL: url)
             await cache.save(data, for: url)
-            return mapRSSFeed(feed, feedURL: url)
+            return podcast
+        } catch let error as FeedError {
+            throw error
         } catch {
             throw FeedError.parsingError(error.localizedDescription)
         }
@@ -63,9 +78,9 @@ final class FeedService: FeedServiceProtocol {
         return URLSession(configuration: configuration)
     }
 
-    private func mapRSSFeed(_ rss: RSSFeed, feedURL: URL) -> Podcast {
+    private func mapRSSFeed(_ rss: RSSFeed, feedURL: URL) throws -> Podcast {
         guard let channel = rss.channel else {
-            return Podcast(title: "Sem titulo", feedURL: feedURL)
+            throw FeedError.emptyFeed
         }
 
         let episodes = channel.items?.compactMap { item -> Episode? in
@@ -79,6 +94,10 @@ final class FeedService: FeedServiceProtocol {
                 publishedAt: item.pubDate
             )
         } ?? []
+
+        guard !episodes.isEmpty else {
+            throw FeedError.emptyFeed
+        }
 
         return Podcast(
             title: channel.title ?? "Sem titulo",

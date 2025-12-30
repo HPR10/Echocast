@@ -12,6 +12,7 @@ enum FeedError: Error, LocalizedError {
     case networkError(Error)
     case parsingError(String)
     case emptyFeed
+    case timeout
 
     var errorDescription: String? {
         switch self {
@@ -23,6 +24,8 @@ enum FeedError: Error, LocalizedError {
             return "Erro ao processar feed: \(message)"
         case .emptyFeed:
             return "Feed vazio ou invalido"
+        case .timeout:
+            return "Tempo de resposta esgotado"
         }
     }
 }
