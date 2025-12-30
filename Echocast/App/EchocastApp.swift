@@ -16,6 +16,7 @@ struct EchocastApp: App {
     init() {
         do {
             container = try ModelContainer(for: FeedHistoryItem.self)
+            let feedService = FeedService()
             addPodcastViewModel = AddPodcastViewModel(
                 manageHistoryUseCase: ManageFeedHistoryUseCase(
                     repository: FeedHistoryRepository(
@@ -23,7 +24,10 @@ struct EchocastApp: App {
                     )
                 ),
                 loadPodcastUseCase: LoadPodcastFromRSSUseCase(
-                    feedService: FeedService()
+                    feedService: feedService
+                ),
+                clearFeedCacheUseCase: ClearFeedCacheUseCase(
+                    feedService: feedService
                 )
             )
         } catch {

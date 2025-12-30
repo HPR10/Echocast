@@ -13,6 +13,7 @@ import Observation
 final class AddPodcastViewModel {
     private let manageHistoryUseCase: ManageFeedHistoryUseCase
     private let loadPodcastUseCase: LoadPodcastFromRSSUseCase
+    private let clearFeedCacheUseCase: ClearFeedCacheUseCase
     private var loadTask: Task<Void, Never>?
     private var activeLoadID: UUID?
 
@@ -23,10 +24,12 @@ final class AddPodcastViewModel {
 
     init(
         manageHistoryUseCase: ManageFeedHistoryUseCase,
-        loadPodcastUseCase: LoadPodcastFromRSSUseCase
+        loadPodcastUseCase: LoadPodcastFromRSSUseCase,
+        clearFeedCacheUseCase: ClearFeedCacheUseCase
     ) {
         self.manageHistoryUseCase = manageHistoryUseCase
         self.loadPodcastUseCase = loadPodcastUseCase
+        self.clearFeedCacheUseCase = clearFeedCacheUseCase
     }
 
     func loadFeed() {
@@ -48,6 +51,10 @@ final class AddPodcastViewModel {
         loadTask = nil
         activeLoadID = nil
         isLoading = false
+    }
+
+    func clearCache() async {
+        await clearFeedCacheUseCase.execute()
     }
 
     // MARK: - Validation

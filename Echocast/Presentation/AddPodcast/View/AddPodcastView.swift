@@ -12,6 +12,7 @@ import Observation
 struct AddPodcastView: View {
     @State private var viewModel: AddPodcastViewModel
     @State private var navigationPath = NavigationPath()
+    @State private var showClearCacheConfirmation = false
     @Query(sort: \FeedHistoryItem.addedAt, order: .reverse) private var feedHistory: [FeedHistoryItem]
 
     init(viewModel: AddPodcastViewModel) {
@@ -42,6 +43,14 @@ struct AddPodcastView: View {
                     viewModel: PodcastDetailViewModel(podcast: podcast)
                 )
             }
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Limpar cache") {
+                        showClearCacheConfirmation = true
+                    }
+                    .disabled(viewModel.isLoading)
+                }
+            }
             .animation(.easeInOut(duration: 0.2), value: viewModel.isLoading)
         }
         .onChange(of: viewModel.loadedPodcast) { _, newPodcast in
@@ -60,6 +69,20 @@ struct AddPodcastView: View {
             Button("OK") { }
         } message: {
             Text(viewModel.errorMessage ?? "")
+        }
+        .confirmationDialog(
+            "Limpar cache de RSS?",
+            isPresented: $showClearCacheConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Limpar", role: .destructive) {
+                Task {
+                    await viewModel.clearCache()
+                }
+            }
+            Button("Cancelar", role: .cancel) { }
+        } message: {
+            Text("Remove o cache e força uma nova busca do feed.")
         }
     }
 }
@@ -163,6 +186,9 @@ private extension AddPodcastView {
             ),
             loadPodcastUseCase: LoadPodcastFromRSSUseCase(
                 feedService: MockFeedService()
+            ),
+            clearFeedCacheUseCase: ClearFeedCacheUseCase(
+                feedService: MockFeedService()
             )
         )
     )
@@ -192,6 +218,9 @@ private extension AddPodcastView {
             ),
             loadPodcastUseCase: LoadPodcastFromRSSUseCase(
                 feedService: MockFeedService()
+            ),
+            clearFeedCacheUseCase: ClearFeedCacheUseCase(
+                feedService: MockFeedService()
             )
         )
     )
@@ -206,6 +235,9 @@ private extension AddPodcastView {
                     repository: MockFeedHistoryRepository()
                 ),
                 loadPodcastUseCase: LoadPodcastFromRSSUseCase(
+                    feedService: MockFeedService()
+                ),
+                clearFeedCacheUseCase: ClearFeedCacheUseCase(
                     feedService: MockFeedService()
                 )
             )
@@ -260,6 +292,9 @@ private extension AddPodcastView {
                 ),
                 loadPodcastUseCase: LoadPodcastFromRSSUseCase(
                     feedService: MockFeedService()
+                ),
+                clearFeedCacheUseCase: ClearFeedCacheUseCase(
+                    feedService: MockFeedService()
                 )
             )
             viewModel.inputText = "https://feeds.simplecast.com/54nAGcIl"
@@ -306,6 +341,9 @@ private extension AddPodcastView {
             ),
             loadPodcastUseCase: LoadPodcastFromRSSUseCase(
                 feedService: MockFeedService()
+            ),
+            clearFeedCacheUseCase: ClearFeedCacheUseCase(
+                feedService: MockFeedService()
             )
         )
     )
@@ -320,6 +358,9 @@ private extension AddPodcastView {
                 repository: MockFeedHistoryRepository()
             ),
             loadPodcastUseCase: LoadPodcastFromRSSUseCase(
+                feedService: MockFeedService()
+            ),
+            clearFeedCacheUseCase: ClearFeedCacheUseCase(
                 feedService: MockFeedService()
             )
         )
