@@ -11,7 +11,7 @@ import Foundation
 @MainActor
 final class MockFeedHistoryRepository: FeedHistoryRepositoryProtocol {
     func add(_ url: String) async {}
-    func delete(_ item: FeedHistoryItem) async {}
-    func findByURL(_ url: String) async -> FeedHistoryItem? { nil }
+    func deleteByURL(_ url: String) async {}
+    func exists(_ url: String) async -> Bool { false }
     func deleteOldestExceeding(limit: Int) async {}
 }

@@ -20,8 +20,8 @@ final class ManageFeedHistoryUseCase {
     func addURL(_ url: String) async {
         guard !url.isEmpty else { return }
 
-        if let existing = await repository.findByURL(url) {
-            await repository.delete(existing)
+        if await repository.exists(url) {
+            await repository.deleteByURL(url)
         }
 
         await repository.add(url)

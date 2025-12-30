@@ -22,16 +22,14 @@ final class FeedHistoryRepository: FeedHistoryRepositoryProtocol {
         saveContext(action: "add")
     }
 
-    func delete(_ item: FeedHistoryItem) async {
+    func deleteByURL(_ url: String) async {
+        guard let item = fetchByURL(url) else { return }
         modelContext.delete(item)
-        saveContext(action: "delete")
+        saveContext(action: "deleteByURL")
     }
 
-    func findByURL(_ url: String) async -> FeedHistoryItem? {
-        let descriptor = FetchDescriptor<FeedHistoryItem>(
-            predicate: #Predicate { $0.url == url }
-        )
-        return try? modelContext.fetch(descriptor).first
+    func exists(_ url: String) async -> Bool {
+        fetchByURL(url) != nil
     }
 
     func deleteOldestExceeding(limit: Int) async {
@@ -55,5 +53,12 @@ final class FeedHistoryRepository: FeedHistoryRepositoryProtocol {
         } catch {
             print("FeedHistoryRepository failed to \(action): \(error)")
         }
+    }
+
+    private func fetchByURL(_ url: String) -> FeedHistoryItem? {
+        let descriptor = FetchDescriptor<FeedHistoryItem>(
+            predicate: #Predicate { $0.url == url }
+        )
+        return try? modelContext.fetch(descriptor).first
     }
 }
