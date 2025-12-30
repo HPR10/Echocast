@@ -20,6 +20,7 @@ struct PlayerView: View {
 
         VStack(spacing: 24) {
             headerSection
+            progressSection
             playbackSection
             Spacer()
         }
@@ -27,7 +28,9 @@ struct PlayerView: View {
         .navigationTitle("Player")
         .navigationBarTitleDisplayMode(.inline)
         .onDisappear {
-            viewModel.stop()
+            Task { @MainActor in
+                viewModel.teardown()
+            }
         }
         .alert("Erro", isPresented: .init(
             get: { viewModel.errorMessage != nil },
@@ -81,6 +84,41 @@ private extension PlayerView {
             if !viewModel.hasAudio {
                 Text("Audio indisponivel para este episodio.")
                     .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    @ViewBuilder
+    var progressSection: some View {
+        let maxDuration = max(viewModel.duration, 1)
+
+        VStack(spacing: 8) {
+            Slider(
+                value: Binding(
+                    get: { viewModel.currentTime },
+                    set: { viewModel.currentTime = $0 }
+                ),
+                in: 0...maxDuration,
+                onEditingChanged: { editing in
+                    if editing {
+                        viewModel.beginScrubbing()
+                    } else {
+                        viewModel.endScrubbing(at: viewModel.currentTime)
+                    }
+                }
+            )
+            .disabled(!viewModel.isSeekable || !viewModel.hasAudio)
+
+            HStack {
+                Text(viewModel.currentTimeText)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Spacer()
+
+                Text(viewModel.durationText)
+                    .font(.caption)
                     .foregroundStyle(.secondary)
             }
         }
