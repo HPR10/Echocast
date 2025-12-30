@@ -105,6 +105,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				FA5B556B2EF7428300C4AB89 /* XCRemoteSwiftPackageReference "FeedKit" */,
+				FA6C6C7B2F0452AA004DD929 /* XCRemoteSwiftPackageReference "Nuke" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = FAC5E45E2EEA3BF900778E43 /* Products */;
@@ -348,6 +349,14 @@
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 10.1.3;
+			};
+		};
+		FA6C6C7B2F0452AA004DD929 /* XCRemoteSwiftPackageReference "Nuke" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/kean/Nuke";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.8.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
