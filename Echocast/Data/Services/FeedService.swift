@@ -11,12 +11,26 @@ import XMLKit
 
 final class FeedService: FeedServiceProtocol {
     private let urlSession: URLSession
+    private let cache: RSSCache
 
-    init(urlSession: URLSession = FeedService.defaultSession()) {
+    init(
+        urlSession: URLSession = FeedService.defaultSession(),
+        cache: RSSCache = RSSCache()
+    ) {
         self.urlSession = urlSession
+        self.cache = cache
     }
 
     func fetchFeed(from url: URL) async throws -> Podcast {
+        if let cachedData = await cache.load(for: url) {
+            do {
+                let feed = try RSSFeed(data: cachedData)
+                return mapRSSFeed(feed, feedURL: url)
+            } catch {
+                await cache.remove(for: url)
+            }
+        }
+
         let (data, response) = try await urlSession.data(from: url)
 
         guard let httpResponse = response as? HTTPURLResponse,
@@ -26,10 +40,15 @@ final class FeedService: FeedServiceProtocol {
 
         do {
             let feed = try RSSFeed(data: data)
+            await cache.save(data, for: url)
             return mapRSSFeed(feed, feedURL: url)
         } catch {
             throw FeedError.parsingError(error.localizedDescription)
         }
+    }
+
+    func clearCache() async {
+        await cache.clear()
     }
 
     // MARK: - Private

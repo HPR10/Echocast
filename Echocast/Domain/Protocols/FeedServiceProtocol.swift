@@ -9,4 +9,5 @@ import Foundation
 
 protocol FeedServiceProtocol: Sendable {
     func fetchFeed(from url: URL) async throws -> Podcast
+    func clearCache() async
 }

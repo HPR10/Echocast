@@ -56,4 +56,6 @@ final class MockFeedService: FeedServiceProtocol {
             ]
         )
     }
+
+    func clearCache() async {}
 }
