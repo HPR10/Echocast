@@ -69,7 +69,9 @@ final class PlayerViewModel {
         self.podcastTitle = podcastTitle
         self.manageProgressUseCase = manageProgressUseCase
         let player = episode.audioURL.map { url in
-            AVPlayer(playerItem: AVPlayerItem(url: url))
+            let item = AVPlayerItem(url: url)
+            item.audioTimePitchAlgorithm = .timeDomain
+            return AVPlayer(playerItem: item)
         }
         self.player = player
         if let feedDuration = episode.duration, feedDuration > 0 {
@@ -77,7 +79,6 @@ final class PlayerViewModel {
         }
 
         if let player {
-            configureAudioSession()
             setupObservers(for: player)
             configureNowPlayingInfo()
             setupRemoteCommands()
@@ -186,13 +187,30 @@ final class PlayerViewModel {
 
     // MARK: - Private
 
-    private func configureAudioSession() {
+    @discardableResult
+    private func configureAudioSession() -> Bool {
         do {
             let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playback, mode: .spokenAudio, options: [.allowAirPlay, .allowBluetoothHFP])
-            try session.setActive(true)
+            try session.setCategory(
+                .playback,
+                mode: .spokenAudio,
+                options: [.allowAirPlay, .allowBluetoothA2DP]
+            )
+            return true
         } catch {
             errorMessage = "Falha ao configurar audio."
+            return false
+        }
+    }
+
+    private func activateAudioSession() -> Bool {
+        guard configureAudioSession() else { return false }
+        do {
+            try AVAudioSession.sharedInstance().setActive(true)
+            return true
+        } catch {
+            errorMessage = "Falha ao ativar audio."
+            return false
         }
     }
 
@@ -597,6 +615,7 @@ final class PlayerViewModel {
             errorMessage = "Audio indisponivel para este episodio."
             return
         }
+        guard activateAudioSession() else { return }
         player?.play()
         player?.rate = playbackRate
         isPlaying = true
