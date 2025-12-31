@@ -12,6 +12,7 @@ import SwiftData
 struct EchocastApp: App {
     let container: ModelContainer
     let addPodcastViewModel: AddPodcastViewModel
+    let playbackProgressUseCase: ManagePlaybackProgressUseCase
 
     init() {
         do {
@@ -28,6 +29,11 @@ struct EchocastApp: App {
             )
             let podcastRepository = PodcastRepository(
                 modelContext: container.mainContext
+            )
+            let playbackProgressUseCase = ManagePlaybackProgressUseCase(
+                repository: PlaybackProgressRepository(
+                    modelContext: container.mainContext
+                )
             )
             addPodcastViewModel = AddPodcastViewModel(
                 manageHistoryUseCase: ManageFeedHistoryUseCase(
@@ -46,6 +52,7 @@ struct EchocastApp: App {
                     imageCacheService: imageCacheService
                 )
             )
+            self.playbackProgressUseCase = playbackProgressUseCase
         } catch {
             fatalError("Failed to create ModelContainer: \(error)")
         }
@@ -53,7 +60,10 @@ struct EchocastApp: App {
 
     var body: some Scene {
         WindowGroup {
-            AddPodcastView(viewModel: addPodcastViewModel)
+            AddPodcastView(
+                viewModel: addPodcastViewModel,
+                manageProgressUseCase: playbackProgressUseCase
+            )
         }
         .modelContainer(container)
     }

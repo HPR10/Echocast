@@ -113,7 +113,8 @@ final class PodcastRepository: PodcastRepositoryProtocol {
             description: entity.summary,
             audioURL: entity.audioURL.flatMap(URL.init),
             duration: entity.duration,
-            publishedAt: entity.publishedAt
+            publishedAt: entity.publishedAt,
+            playbackKey: entity.dedupKey
         )
     }
 

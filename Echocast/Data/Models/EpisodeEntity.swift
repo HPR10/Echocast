@@ -18,6 +18,8 @@ final class EpisodeEntity {
     var publishedAt: Date?
     var dedupKey: String
     var podcastID: UUID
+    var playbackPosition: TimeInterval = 0
+    var playbackUpdatedAt: Date?
 
     var podcast: PodcastEntity?
 
@@ -30,6 +32,8 @@ final class EpisodeEntity {
         publishedAt: Date? = nil,
         dedupKey: String,
         podcastID: UUID,
+        playbackPosition: TimeInterval = 0,
+        playbackUpdatedAt: Date? = nil,
         podcast: PodcastEntity? = nil
     ) {
         self.id = id
@@ -40,6 +44,8 @@ final class EpisodeEntity {
         self.publishedAt = publishedAt
         self.dedupKey = dedupKey
         self.podcastID = podcastID
+        self.playbackPosition = playbackPosition
+        self.playbackUpdatedAt = playbackUpdatedAt
         self.podcast = podcast
     }
 }

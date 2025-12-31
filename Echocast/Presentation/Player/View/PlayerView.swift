@@ -136,7 +136,10 @@ private extension PlayerView {
                     description: "Um episodio de teste para o player.",
                     audioURL: URL(string: "https://example.com/audio.mp3")
                 ),
-                podcastTitle: "Podcast de Teste"
+                podcastTitle: "Podcast de Teste",
+                manageProgressUseCase: ManagePlaybackProgressUseCase(
+                    repository: MockPlaybackProgressRepository()
+                )
             )
         )
     }
@@ -150,7 +153,10 @@ private extension PlayerView {
                     title: "Episodio sem audio",
                     description: "Episodio sem URL de audio."
                 ),
-                podcastTitle: "Podcast de Teste"
+                podcastTitle: "Podcast de Teste",
+                manageProgressUseCase: ManagePlaybackProgressUseCase(
+                    repository: MockPlaybackProgressRepository()
+                )
             )
         )
     }

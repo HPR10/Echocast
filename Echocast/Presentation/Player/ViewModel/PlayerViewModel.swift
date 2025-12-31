@@ -15,6 +15,7 @@ import Observation
 final class PlayerViewModel {
     let episode: Episode
     let podcastTitle: String
+    private let manageProgressUseCase: ManagePlaybackProgressUseCase
     private let player: AVPlayer?
     private var timeObserver: Any?
     private var statusObserver: NSKeyValueObservation?
@@ -30,6 +31,10 @@ final class PlayerViewModel {
     private var toggleCommandTarget: Any?
     private var changePlaybackPositionTarget: Any?
     private var wasPlayingBeforeInterruption = false
+    private var pendingResumeTime: TimeInterval?
+    private var hasRestoredProgress = false
+    private var lastProgressSaveTime: TimeInterval = 0
+    private let progressSaveInterval: TimeInterval = 10
 
     var isPlaying = false
     var errorMessage: String?
@@ -37,9 +42,14 @@ final class PlayerViewModel {
     var duration: TimeInterval = 0
     private var isScrubbing = false
 
-    init(episode: Episode, podcastTitle: String) {
+    init(
+        episode: Episode,
+        podcastTitle: String,
+        manageProgressUseCase: ManagePlaybackProgressUseCase
+    ) {
         self.episode = episode
         self.podcastTitle = podcastTitle
+        self.manageProgressUseCase = manageProgressUseCase
         let player = episode.audioURL.map { url in
             AVPlayer(playerItem: AVPlayerItem(url: url))
         }
@@ -51,6 +61,10 @@ final class PlayerViewModel {
             configureNowPlayingInfo()
             setupRemoteCommands()
             setupAudioSessionObservers()
+        }
+
+        Task { @MainActor in
+            await loadSavedProgress()
         }
     }
 
@@ -91,6 +105,7 @@ final class PlayerViewModel {
     func endScrubbing(at time: TimeInterval) {
         isScrubbing = false
         seek(to: time)
+        saveProgress(force: true)
     }
 
     func stop() {
@@ -99,6 +114,7 @@ final class PlayerViewModel {
 
     func teardown() {
         stop()
+        saveProgress(force: true)
         teardownRemoteCommands()
         clearNowPlayingInfo()
         teardownAudioSessionObservers()
@@ -160,6 +176,8 @@ final class PlayerViewModel {
                         self.duration = duration
                     }
                 }
+                self.restoreProgressIfNeeded()
+                self.saveProgress()
                 self.updateNowPlayingInfo()
             }
         }
@@ -180,6 +198,7 @@ final class PlayerViewModel {
                     if duration.isFinite {
                         self.duration = duration
                     }
+                    self.restoreProgressIfNeeded()
                     self.updateNowPlayingInfo()
                 }
                 if item.status == .failed {
@@ -199,6 +218,7 @@ final class PlayerViewModel {
                 guard let self else { return }
                 self.isPlaying = false
                 self.currentTime = self.duration
+                await self.clearProgress()
                 self.updateNowPlayingInfo()
             }
         }
@@ -303,6 +323,53 @@ final class PlayerViewModel {
         updateNowPlayingInfo()
     }
 
+    private func loadSavedProgress() async {
+        guard let progress = await manageProgressUseCase.load(for: episode.playbackKey) else { return }
+        pendingResumeTime = progress.position
+        restoreProgressIfNeeded()
+    }
+
+    private func restoreProgressIfNeeded() {
+        guard !hasRestoredProgress else { return }
+        guard let pendingResumeTime, pendingResumeTime > 0 else { return }
+        guard duration > 0 && duration.isFinite else { return }
+
+        let clamped = max(0, min(pendingResumeTime, duration))
+        if clamped > 0 {
+            seek(to: clamped)
+        }
+
+        hasRestoredProgress = true
+        self.pendingResumeTime = nil
+    }
+
+    private func saveProgress(force: Bool = false) {
+        guard hasAudio else { return }
+        guard !isScrubbing || force else { return }
+
+        let now = Date().timeIntervalSince1970
+        if !force, now - lastProgressSaveTime < progressSaveInterval {
+            return
+        }
+
+        guard currentTime > 0 else { return }
+        lastProgressSaveTime = now
+
+        let progressDuration = duration > 0 && duration.isFinite ? duration : nil
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            await self.manageProgressUseCase.save(
+                for: self.episode.playbackKey,
+                position: self.currentTime,
+                duration: progressDuration
+            )
+        }
+    }
+
+    private func clearProgress() async {
+        await manageProgressUseCase.clear(for: episode.playbackKey)
+    }
+
     private func updateNowPlayingInfo() {
         guard player != nil else { return }
 
@@ -404,6 +471,7 @@ final class PlayerViewModel {
     private func pausePlayback() {
         player?.pause()
         isPlaying = false
+        saveProgress(force: true)
         updateNowPlayingInfo()
     }
 
@@ -429,4 +497,3 @@ final class PlayerViewModel {
         return formatter
     }()
 }
-

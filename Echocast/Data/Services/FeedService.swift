@@ -85,13 +85,19 @@ final class FeedService: FeedServiceProtocol {
 
         let episodes = channel.items?.compactMap { item -> Episode? in
             guard let title = item.title else { return nil }
-
+            let audioURL = item.enclosure?.attributes?.url.flatMap(URL.init)
             return Episode(
                 title: title,
                 description: plainText(from: item.description),
-                audioURL: item.enclosure?.attributes?.url.flatMap(URL.init),
+                audioURL: audioURL,
                 duration: item.iTunes?.duration,
-                publishedAt: item.pubDate
+                publishedAt: item.pubDate,
+                playbackKey: Episode.makePlaybackKey(
+                    title: title,
+                    audioURL: audioURL,
+                    publishedAt: item.pubDate,
+                    podcastSeed: feedURL.absoluteString
+                )
             )
         } ?? []
 

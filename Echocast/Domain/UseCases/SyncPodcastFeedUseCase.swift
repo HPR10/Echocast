@@ -25,23 +25,10 @@ final class SyncPodcastFeedUseCase {
         let podcastID = await repository.upsertPodcast(podcast)
 
         let items = podcast.episodes.map { episode in
-            EpisodeSyncItem(episode: episode, dedupKey: dedupKey(for: episode))
+            EpisodeSyncItem(episode: episode, dedupKey: episode.playbackKey)
         }
         await repository.upsertEpisodes(items, podcastID: podcastID)
 
         return await repository.fetchPodcast(by: url) ?? podcast
-    }
-
-    private func dedupKey(for episode: Episode) -> String {
-        if let audioURL = episode.audioURL?.absoluteString, !audioURL.isEmpty {
-            return "audio:\(audioURL)"
-        }
-
-        if let publishedAt = episode.publishedAt {
-            let timestamp = Int(publishedAt.timeIntervalSince1970)
-            return "title-date:\(episode.title)|\(timestamp)"
-        }
-
-        return "title:\(episode.title)"
     }
 }
