@@ -33,6 +33,9 @@ final class PlayerViewModel {
     private var pauseCommandTarget: Any?
     private var toggleCommandTarget: Any?
     private var changePlaybackPositionTarget: Any?
+    private var skipForwardCommandTarget: Any?
+    private var skipBackwardCommandTarget: Any?
+    private var changePlaybackRateTarget: Any?
     private var wasPlayingBeforeInterruption = false
     private var pendingResumeTime: TimeInterval?
     private var hasRestoredProgress = false
@@ -553,6 +556,14 @@ final class PlayerViewModel {
         remoteCommandCenter.pauseCommand.isEnabled = true
         remoteCommandCenter.togglePlayPauseCommand.isEnabled = true
         remoteCommandCenter.changePlaybackPositionCommand.isEnabled = true
+        remoteCommandCenter.skipForwardCommand.isEnabled = true
+        remoteCommandCenter.skipBackwardCommand.isEnabled = true
+        remoteCommandCenter.changePlaybackRateCommand.isEnabled = true
+
+        remoteCommandCenter.skipForwardCommand.preferredIntervals = [NSNumber(value: skipForwardInterval)]
+        remoteCommandCenter.skipBackwardCommand.preferredIntervals = [NSNumber(value: skipBackwardInterval)]
+        remoteCommandCenter.changePlaybackRateCommand.supportedPlaybackRates = availablePlaybackRates
+            .map { NSNumber(value: $0) }
 
         playCommandTarget = remoteCommandCenter.playCommand.addTarget { [weak self] _ in
             Task { @MainActor [weak self] in
@@ -584,6 +595,30 @@ final class PlayerViewModel {
             }
             return .success
         }
+
+        skipForwardCommandTarget = remoteCommandCenter.skipForwardCommand.addTarget { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.skipForward()
+            }
+            return .success
+        }
+
+        skipBackwardCommandTarget = remoteCommandCenter.skipBackwardCommand.addTarget { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.skipBackward()
+            }
+            return .success
+        }
+
+        changePlaybackRateTarget = remoteCommandCenter.changePlaybackRateCommand.addTarget { [weak self] event in
+            guard let event = event as? MPChangePlaybackRateCommandEvent else {
+                return .commandFailed
+            }
+            Task { @MainActor [weak self] in
+                self?.setPlaybackRate(event.playbackRate)
+            }
+            return .success
+        }
     }
 
     private func teardownRemoteCommands() {
@@ -603,11 +638,26 @@ final class PlayerViewModel {
             remoteCommandCenter.changePlaybackPositionCommand.removeTarget(changePlaybackPositionTarget)
             self.changePlaybackPositionTarget = nil
         }
+        if let skipForwardCommandTarget {
+            remoteCommandCenter.skipForwardCommand.removeTarget(skipForwardCommandTarget)
+            self.skipForwardCommandTarget = nil
+        }
+        if let skipBackwardCommandTarget {
+            remoteCommandCenter.skipBackwardCommand.removeTarget(skipBackwardCommandTarget)
+            self.skipBackwardCommandTarget = nil
+        }
+        if let changePlaybackRateTarget {
+            remoteCommandCenter.changePlaybackRateCommand.removeTarget(changePlaybackRateTarget)
+            self.changePlaybackRateTarget = nil
+        }
 
         remoteCommandCenter.playCommand.isEnabled = false
         remoteCommandCenter.pauseCommand.isEnabled = false
         remoteCommandCenter.togglePlayPauseCommand.isEnabled = false
         remoteCommandCenter.changePlaybackPositionCommand.isEnabled = false
+        remoteCommandCenter.skipForwardCommand.isEnabled = false
+        remoteCommandCenter.skipBackwardCommand.isEnabled = false
+        remoteCommandCenter.changePlaybackRateCommand.isEnabled = false
     }
 
     private func startPlayback() {
