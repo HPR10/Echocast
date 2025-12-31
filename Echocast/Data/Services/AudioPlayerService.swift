@@ -7,11 +7,13 @@
 
 import AVFoundation
 import MediaPlayer
+import Network
 
 @MainActor
 final class AudioPlayerService: AudioPlayerServiceProtocol {
     private let nowPlayingInfoCenter = MPNowPlayingInfoCenter.default()
     private let remoteCommandCenter = MPRemoteCommandCenter.shared()
+    private let audioSession = AVAudioSession.sharedInstance()
 
     private var player: AVPlayer?
     private var currentEpisode: Episode?
@@ -43,11 +45,17 @@ final class AudioPlayerService: AudioPlayerServiceProtocol {
     private var wasPlayingBeforeInterruption = false
     private var hasSetupRemoteCommands = false
     private var hasSetupAudioSessionObservers = false
+    private var isPlaybackRequested = false
+    private var shouldResumeWhenNetworkReturns = false
+    private var isNetworkAvailable = true
+    private let networkQueue = DispatchQueue(label: "AudioPlayerService.network")
+    private var networkMonitor: NWPathMonitor?
 
     private let skipForwardInterval: TimeInterval = 15
     private let skipBackwardInterval: TimeInterval = 30
     private let minPlaybackRate: Float = 0.5
     private let maxPlaybackRate: Float = 2.0
+    private let preferredAudioSessionOptions: AVAudioSession.CategoryOptions = [.allowAirPlay, .allowBluetoothA2DP]
 
     private var availablePlaybackRates: [Float] {
         [0.5, 0.75, 1.0, 1.25, 1.5, 2.0]
@@ -89,11 +97,14 @@ final class AudioPlayerService: AudioPlayerServiceProtocol {
     }
 
     func load(episode: Episode, podcastTitle: String) {
+        startNetworkMonitor()
         currentEpisode = episode
         self.podcastTitle = podcastTitle
         resetPlayerObservers()
         player?.pause()
         player = nil
+        isPlaybackRequested = false
+        shouldResumeWhenNetworkReturns = false
 
         state = PlayerState.idle
         if let duration = episode.duration, duration > 0 {
@@ -120,10 +131,23 @@ final class AudioPlayerService: AudioPlayerServiceProtocol {
     func play() {
         guard player != nil else {
             eventContinuation?.yield(.didFail(.audioUnavailable))
+            isPlaybackRequested = false
+            shouldResumeWhenNetworkReturns = false
+            return
+        }
+        isPlaybackRequested = true
+        if !isNetworkAvailable {
+            shouldResumeWhenNetworkReturns = true
+            updateState { state in
+                state.isPlaying = false
+                state.isBuffering = true
+                state.bufferingReason = .noNetwork
+            }
             return
         }
         guard activateAudioSession() else {
             eventContinuation?.yield(.didFail(.audioSessionFailure))
+            isPlaybackRequested = false
             return
         }
         player?.play()
@@ -132,9 +156,15 @@ final class AudioPlayerService: AudioPlayerServiceProtocol {
     }
 
     func pause() {
+        isPlaybackRequested = false
+        shouldResumeWhenNetworkReturns = false
         player?.pause()
         updateState { state in
             state.isPlaying = false
+            if state.bufferingReason == .noNetwork {
+                state.isBuffering = false
+                state.bufferingReason = nil
+            }
         }
     }
 
@@ -165,6 +195,7 @@ final class AudioPlayerService: AudioPlayerServiceProtocol {
 
     func teardown() {
         pause()
+        stopNetworkMonitor()
         resetPlayerObservers()
         teardownRemoteCommands()
         clearNowPlayingInfo()
@@ -189,6 +220,90 @@ final class AudioPlayerService: AudioPlayerServiceProtocol {
     private func yieldState() {
         stateContinuation?.yield(state)
         updateNowPlayingInfo()
+    }
+
+    private func startNetworkMonitor() {
+        guard networkMonitor == nil else { return }
+
+        let monitor = NWPathMonitor()
+        networkMonitor = monitor
+        monitor.pathUpdateHandler = { [weak self] path in
+            Task { @MainActor [weak self] in
+                self?.handleNetworkPathUpdate(path)
+            }
+        }
+        monitor.start(queue: networkQueue)
+        let currentPath = monitor.currentPath
+        Task { @MainActor [weak self] in
+            self?.handleNetworkPathUpdate(currentPath)
+        }
+    }
+
+    private func stopNetworkMonitor() {
+        networkMonitor?.cancel()
+        networkMonitor = nil
+    }
+
+    private func handleNetworkPathUpdate(_ path: NWPath) {
+        let available = path.status == .satisfied
+        guard available != isNetworkAvailable else { return }
+        isNetworkAvailable = available
+
+        if available {
+            handleNetworkRecovery()
+        } else {
+            handleNetworkLoss()
+        }
+    }
+
+    private func handleNetworkLoss() {
+        guard player != nil else { return }
+
+        let shouldResume = isPlaybackRequested || state.isPlaying
+        shouldResumeWhenNetworkReturns = shouldResume
+
+        guard shouldResume else { return }
+        pauseForNetworkLoss()
+    }
+
+    private func handleNetworkRecovery() {
+        if state.bufferingReason == .noNetwork {
+            updateState { state in
+                state.isBuffering = false
+                state.bufferingReason = nil
+            }
+        }
+
+        guard shouldResumeWhenNetworkReturns, isPlaybackRequested else { return }
+        shouldResumeWhenNetworkReturns = false
+        resumePlaybackAfterNetworkRecovery()
+    }
+
+    private func pauseForNetworkLoss() {
+        player?.pause()
+        updateState { state in
+            state.isPlaying = false
+            state.isBuffering = true
+            state.bufferingReason = .noNetwork
+        }
+    }
+
+    private func resumePlaybackAfterNetworkRecovery() {
+        guard let player, let episode = currentEpisode, let url = episode.audioURL else { return }
+
+        if player.currentItem?.status == .failed || player.currentItem == nil {
+            resetPlayerObservers()
+            let item = AVPlayerItem(url: url)
+            item.audioTimePitchAlgorithm = .timeDomain
+            player.replaceCurrentItem(with: item)
+            setupObservers(for: player)
+        }
+
+        if state.currentTime > 0 {
+            seek(to: state.currentTime)
+        }
+
+        play()
     }
 
     private func setupObservers(for player: AVPlayer) {
@@ -245,8 +360,14 @@ final class AudioPlayerService: AudioPlayerServiceProtocol {
                         }
                     }
                 case .failed:
+                    if !self.isNetworkAvailable {
+                        self.handleNetworkLoss()
+                        return
+                    }
                     let message = item.error?.localizedDescription ?? ""
                     self.eventContinuation?.yield(.didFail(.playbackFailed(message)))
+                    self.isPlaybackRequested = false
+                    self.shouldResumeWhenNetworkReturns = false
                     self.updateState { state in
                         state.isPlaying = false
                         state.isBuffering = false
@@ -266,6 +387,10 @@ final class AudioPlayerService: AudioPlayerServiceProtocol {
         ) { [weak self] item, _ in
             Task { @MainActor [weak self] in
                 guard let self else { return }
+                if !self.isNetworkAvailable {
+                    self.handleNetworkLoss()
+                    return
+                }
                 if item.isPlaybackLikelyToKeepUp {
                     self.updateState { state in
                         state.isBuffering = false
@@ -287,6 +412,8 @@ final class AudioPlayerService: AudioPlayerServiceProtocol {
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
                 guard let self else { return }
+                self.isPlaybackRequested = false
+                self.shouldResumeWhenNetworkReturns = false
                 self.updateState { state in
                     state.isPlaying = false
                     state.currentTime = state.duration
@@ -306,7 +433,13 @@ final class AudioPlayerService: AudioPlayerServiceProtocol {
                 .localizedDescription ?? ""
             Task { @MainActor [weak self] in
                 guard let self else { return }
+                if !self.isNetworkAvailable {
+                    self.handleNetworkLoss()
+                    return
+                }
                 self.eventContinuation?.yield(.didFail(.playbackFailed(message)))
+                self.isPlaybackRequested = false
+                self.shouldResumeWhenNetworkReturns = false
                 self.updateState { state in
                     state.isPlaying = false
                     state.isBuffering = false
@@ -322,6 +455,10 @@ final class AudioPlayerService: AudioPlayerServiceProtocol {
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
                 guard let self else { return }
+                if !self.isNetworkAvailable {
+                    self.handleNetworkLoss()
+                    return
+                }
                 self.updateState { state in
                     state.isBuffering = true
                     state.bufferingReason = .stalled
@@ -359,6 +496,10 @@ final class AudioPlayerService: AudioPlayerServiceProtocol {
     }
 
     private func bufferingState(for player: AVPlayer) -> (isBuffering: Bool, reason: PlayerBufferingReason?) {
+        if !isNetworkAvailable {
+            return (true, .noNetwork)
+        }
+
         let status = player.timeControlStatus
         let isWaiting = status == .waitingToPlayAtSpecifiedRate
         let likelyToKeepUp = player.currentItem?.isPlaybackLikelyToKeepUp ?? true
@@ -619,36 +760,38 @@ final class AudioPlayerService: AudioPlayerServiceProtocol {
         }
     }
 
-    @discardableResult
-    private func configureAudioSession() -> Bool {
-        do {
-            let session = AVAudioSession.sharedInstance()
-            try session.setCategory(
-                .playback,
-                mode: .spokenAudio,
-                options: [.allowAirPlay, .allowBluetoothA2DP]
-            )
-            return true
-        } catch {
-            return false
-        }
-    }
-
     private func activateAudioSession() -> Bool {
-        guard configureAudioSession() else { return false }
         do {
-            try AVAudioSession.sharedInstance().setActive(true)
+            try configureAudioSession()
+            try audioSession.setActive(true, options: [.notifyOthersOnDeactivation])
             return true
         } catch {
-            return false
+            do {
+                try audioSession.setActive(false, options: .notifyOthersOnDeactivation)
+                try configureAudioSession(useFallback: true)
+                try audioSession.setActive(true, options: [.notifyOthersOnDeactivation])
+                return true
+            } catch {
+                return false
+            }
         }
     }
 
     private func deactivateAudioSession() {
         do {
-            try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+            try audioSession.setActive(false, options: .notifyOthersOnDeactivation)
         } catch {
             return
         }
+    }
+
+    private func configureAudioSession(useFallback: Bool = false) throws {
+        let mode: AVAudioSession.Mode = useFallback ? .default : .spokenAudio
+        let options: AVAudioSession.CategoryOptions = useFallback ? [] : preferredAudioSessionOptions
+        try audioSession.setCategory(
+            .playback,
+            mode: mode,
+            options: options
+        )
     }
 }

@@ -208,6 +208,8 @@ final class PlayerViewModel {
             return "Avaliando velocidade da conexao..."
         case .noItem:
             return "Preparando o episodio..."
+        case .noNetwork:
+            return "Sem internet. Aguardando reconexao..."
         case .stalled:
             return "Reproducao interrompida, tentando retomar..."
         case .unknown:

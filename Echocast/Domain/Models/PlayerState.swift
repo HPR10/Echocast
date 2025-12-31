@@ -30,6 +30,7 @@ enum PlayerBufferingReason: Sendable {
     case minimizeStalls
     case evaluatingBufferingRate
     case noItem
+    case noNetwork
     case stalled
     case unknown
 }
