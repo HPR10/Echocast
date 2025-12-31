@@ -19,6 +19,9 @@ struct PlayerRouteView: View {
             podcastTitle: podcastTitle
         )
         PlayerView(viewModel: viewModel)
+            .onDisappear {
+                playerCoordinator.handleViewDisappear(for: episode)
+            }
     }
 }
 

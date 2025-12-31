@@ -320,4 +320,11 @@ final class PlayerCoordinator {
         viewModel?.teardown()
         viewModel = nil
     }
+
+    func handleViewDisappear(for episode: Episode) {
+        guard let viewModel, viewModel.episode.playbackKey == episode.playbackKey else { return }
+        guard !viewModel.isPlaying, !viewModel.isBuffering else { return }
+        viewModel.teardown()
+        self.viewModel = nil
+    }
 }
