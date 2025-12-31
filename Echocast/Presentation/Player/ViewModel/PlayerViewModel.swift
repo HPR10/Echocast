@@ -35,12 +35,25 @@ final class PlayerViewModel {
     private var hasRestoredProgress = false
     private var lastProgressSaveTime: TimeInterval = 0
     private let progressSaveInterval: TimeInterval = 10
+    private let skipForwardInterval: TimeInterval = 15
+    private let skipBackwardInterval: TimeInterval = 30
+    private let minPlaybackRate: Float = 0.5
+    private let maxPlaybackRate: Float = 2.0
 
     var isPlaying = false
     var errorMessage: String?
     var currentTime: TimeInterval = 0
     var duration: TimeInterval = 0
+    var playbackRate: Float = 1.0
     private var isScrubbing = false
+
+    var availablePlaybackRates: [Float] {
+        [0.5, 0.75, 1.0, 1.25, 1.5, 2.0]
+    }
+
+    var playbackRateText: String {
+        String(format: "%.2gx", playbackRate)
+    }
 
     init(
         episode: Episode,
@@ -96,6 +109,23 @@ final class PlayerViewModel {
         } else {
             startPlayback()
         }
+    }
+
+    func setPlaybackRate(_ rate: Float) {
+        let clamped = max(minPlaybackRate, min(rate, maxPlaybackRate))
+        playbackRate = clamped
+        if isPlaying {
+            player?.rate = clamped
+            updateNowPlayingInfo()
+        }
+    }
+
+    func skipForward() {
+        seek(to: currentTime + skipForwardInterval)
+    }
+
+    func skipBackward() {
+        seek(to: currentTime - skipBackwardInterval)
     }
 
     func beginScrubbing() {
@@ -382,8 +412,8 @@ final class PlayerViewModel {
         }
 
         info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = currentTime
-        info[MPNowPlayingInfoPropertyPlaybackRate] = isPlaying ? 1.0 : 0.0
-        info[MPNowPlayingInfoPropertyDefaultPlaybackRate] = 1.0
+        info[MPNowPlayingInfoPropertyPlaybackRate] = isPlaying ? playbackRate : 0.0
+        info[MPNowPlayingInfoPropertyDefaultPlaybackRate] = playbackRate
 
         nowPlayingInfoCenter.nowPlayingInfo = info
         nowPlayingInfoCenter.playbackState = isPlaying ? .playing : .paused
@@ -464,6 +494,7 @@ final class PlayerViewModel {
             return
         }
         player?.play()
+        player?.rate = playbackRate
         isPlaying = true
         updateNowPlayingInfo()
     }
@@ -481,6 +512,9 @@ final class PlayerViewModel {
         let target = CMTime(seconds: clamped, preferredTimescale: 600)
         player.seek(to: target, toleranceBefore: .zero, toleranceAfter: .zero)
         currentTime = clamped
+        if isPlaying {
+            player.rate = playbackRate
+        }
         updateNowPlayingInfo()
     }
 

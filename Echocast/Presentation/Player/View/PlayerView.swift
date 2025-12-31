@@ -21,6 +21,7 @@ struct PlayerView: View {
         VStack(spacing: 24) {
             headerSection
             progressSection
+            controlSection
             playbackSection
             Spacer()
         }
@@ -85,6 +86,49 @@ private extension PlayerView {
                 Text("Audio indisponivel para este episodio.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    @ViewBuilder
+    var controlSection: some View {
+        VStack(spacing: 12) {
+            HStack(spacing: 24) {
+                Button {
+                    viewModel.skipBackward()
+                } label: {
+                    Label("-30s", systemImage: "gobackward.30")
+                        .frame(minWidth: 80)
+                }
+                .buttonStyle(.bordered)
+                .disabled(!viewModel.hasAudio || !viewModel.isSeekable)
+
+                Button {
+                    viewModel.skipForward()
+                } label: {
+                    Label("+15s", systemImage: "goforward.15")
+                        .frame(minWidth: 80)
+                }
+                .buttonStyle(.bordered)
+                .disabled(!viewModel.hasAudio || !viewModel.isSeekable)
+            }
+
+            HStack {
+                Text("Velocidade")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Menu {
+                    ForEach(viewModel.availablePlaybackRates, id: \.self) { rate in
+                        Button(String(format: "%.2gx", rate)) {
+                            viewModel.setPlaybackRate(rate)
+                        }
+                    }
+                } label: {
+                    Label(viewModel.playbackRateText, systemImage: "speedometer")
+                        .frame(minWidth: 120)
+                }
+                .disabled(!viewModel.hasAudio)
             }
         }
     }
