@@ -21,12 +21,15 @@ final class PlayerViewModel {
     private var itemStatusObserver: NSKeyValueObservation?
     private var endObserver: NSObjectProtocol?
     private var failObserver: NSObjectProtocol?
+    private var interruptionObserver: NSObjectProtocol?
+    private var routeChangeObserver: NSObjectProtocol?
     private let nowPlayingInfoCenter = MPNowPlayingInfoCenter.default()
     private let remoteCommandCenter = MPRemoteCommandCenter.shared()
     private var playCommandTarget: Any?
     private var pauseCommandTarget: Any?
     private var toggleCommandTarget: Any?
     private var changePlaybackPositionTarget: Any?
+    private var wasPlayingBeforeInterruption = false
 
     var isPlaying = false
     var errorMessage: String?
@@ -47,6 +50,7 @@ final class PlayerViewModel {
             setupObservers(for: player)
             configureNowPlayingInfo()
             setupRemoteCommands()
+            setupAudioSessionObservers()
         }
     }
 
@@ -97,6 +101,7 @@ final class PlayerViewModel {
         stop()
         teardownRemoteCommands()
         clearNowPlayingInfo()
+        teardownAudioSessionObservers()
         deactivateAudioSession()
 
         if let timeObserver {
@@ -214,6 +219,86 @@ final class PlayerViewModel {
         }
     }
 
+    private func setupAudioSessionObservers() {
+        interruptionObserver = NotificationCenter.default.addObserver(
+            forName: AVAudioSession.interruptionNotification,
+            object: AVAudioSession.sharedInstance(),
+            queue: .main
+        ) { [weak self] notification in
+            let userInfo = notification.userInfo
+            let typeValue = userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt
+            let optionsValue = userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt
+            Task { @MainActor [weak self] in
+                self?.handleAudioSessionInterruption(typeValue: typeValue, optionsValue: optionsValue)
+            }
+        }
+
+        routeChangeObserver = NotificationCenter.default.addObserver(
+            forName: AVAudioSession.routeChangeNotification,
+            object: AVAudioSession.sharedInstance(),
+            queue: .main
+        ) { [weak self] notification in
+            let userInfo = notification.userInfo
+            let reasonValue = userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt
+            Task { @MainActor [weak self] in
+                self?.handleAudioSessionRouteChange(reasonValue: reasonValue)
+            }
+        }
+    }
+
+    private func teardownAudioSessionObservers() {
+        if let interruptionObserver {
+            NotificationCenter.default.removeObserver(interruptionObserver)
+            self.interruptionObserver = nil
+        }
+        if let routeChangeObserver {
+            NotificationCenter.default.removeObserver(routeChangeObserver)
+            self.routeChangeObserver = nil
+        }
+        wasPlayingBeforeInterruption = false
+    }
+
+    private func handleAudioSessionInterruption(typeValue: UInt?, optionsValue: UInt?) {
+        guard let typeValue, let type = AVAudioSession.InterruptionType(rawValue: typeValue) else {
+            return
+        }
+
+        switch type {
+        case .began:
+            wasPlayingBeforeInterruption = isPlaying
+            pausePlayback()
+        case .ended:
+            let options = AVAudioSession.InterruptionOptions(rawValue: optionsValue ?? 0)
+            if options.contains(.shouldResume), wasPlayingBeforeInterruption {
+                startPlayback()
+            }
+            wasPlayingBeforeInterruption = false
+        @unknown default:
+            break
+        }
+    }
+
+    private func handleAudioSessionRouteChange(reasonValue: UInt?) {
+        guard let reasonValue, let reason = AVAudioSession.RouteChangeReason(rawValue: reasonValue) else {
+            return
+        }
+
+        switch reason {
+        case .oldDeviceUnavailable:
+            pausePlayback()
+        case .newDeviceAvailable,
+             .categoryChange,
+             .override,
+             .wakeFromSleep,
+             .noSuitableRouteForCategory,
+             .routeConfigurationChange,
+             .unknown:
+            break
+        @unknown default:
+            break
+        }
+    }
+
     private func configureNowPlayingInfo() {
         updateNowPlayingInfo()
     }
@@ -307,6 +392,10 @@ final class PlayerViewModel {
     }
 
     private func startPlayback() {
+        guard player != nil else {
+            errorMessage = "Audio indisponivel para este episodio."
+            return
+        }
         player?.play()
         isPlaying = true
         updateNowPlayingInfo()
