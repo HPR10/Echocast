@@ -15,18 +15,29 @@ struct EchocastApp: App {
 
     init() {
         do {
-            container = try ModelContainer(for: FeedHistoryItem.self)
+            container = try ModelContainer(
+                for: FeedHistoryItem.self,
+                PodcastEntity.self,
+                EpisodeEntity.self
+            )
             let feedService = FeedService()
             let imageCacheService = ImageCacheService()
             imageCacheService.configureSharedPipeline()
+            let loadPodcastUseCase = LoadPodcastFromRSSUseCase(
+                feedService: feedService
+            )
+            let podcastRepository = PodcastRepository(
+                modelContext: container.mainContext
+            )
             addPodcastViewModel = AddPodcastViewModel(
                 manageHistoryUseCase: ManageFeedHistoryUseCase(
                     repository: FeedHistoryRepository(
                         modelContext: container.mainContext
                     )
                 ),
-                loadPodcastUseCase: LoadPodcastFromRSSUseCase(
-                    feedService: feedService
+                syncPodcastUseCase: SyncPodcastFeedUseCase(
+                    loadPodcastUseCase: loadPodcastUseCase,
+                    repository: podcastRepository
                 ),
                 clearFeedCacheUseCase: ClearFeedCacheUseCase(
                     feedService: feedService

@@ -184,8 +184,11 @@ private extension AddPodcastView {
             manageHistoryUseCase: ManageFeedHistoryUseCase(
                 repository: MockFeedHistoryRepository()
             ),
-            loadPodcastUseCase: LoadPodcastFromRSSUseCase(
-                feedService: MockFeedService()
+            syncPodcastUseCase: SyncPodcastFeedUseCase(
+                loadPodcastUseCase: LoadPodcastFromRSSUseCase(
+                    feedService: MockFeedService()
+                ),
+                repository: MockPodcastRepository()
             ),
             clearFeedCacheUseCase: ClearFeedCacheUseCase(
                 feedService: MockFeedService()
@@ -219,8 +222,11 @@ private extension AddPodcastView {
             manageHistoryUseCase: ManageFeedHistoryUseCase(
                 repository: MockFeedHistoryRepository()
             ),
-            loadPodcastUseCase: LoadPodcastFromRSSUseCase(
-                feedService: MockFeedService()
+            syncPodcastUseCase: SyncPodcastFeedUseCase(
+                loadPodcastUseCase: LoadPodcastFromRSSUseCase(
+                    feedService: MockFeedService()
+                ),
+                repository: MockPodcastRepository()
             ),
             clearFeedCacheUseCase: ClearFeedCacheUseCase(
                 feedService: MockFeedService()
@@ -240,8 +246,11 @@ private extension AddPodcastView {
                 manageHistoryUseCase: ManageFeedHistoryUseCase(
                     repository: MockFeedHistoryRepository()
                 ),
-                loadPodcastUseCase: LoadPodcastFromRSSUseCase(
-                    feedService: MockFeedService()
+                syncPodcastUseCase: SyncPodcastFeedUseCase(
+                    loadPodcastUseCase: LoadPodcastFromRSSUseCase(
+                        feedService: MockFeedService()
+                    ),
+                    repository: MockPodcastRepository()
                 ),
                 clearFeedCacheUseCase: ClearFeedCacheUseCase(
                     feedService: MockFeedService()
@@ -299,8 +308,11 @@ private extension AddPodcastView {
                 manageHistoryUseCase: ManageFeedHistoryUseCase(
                     repository: MockFeedHistoryRepository()
                 ),
-                loadPodcastUseCase: LoadPodcastFromRSSUseCase(
-                    feedService: MockFeedService()
+                syncPodcastUseCase: SyncPodcastFeedUseCase(
+                    loadPodcastUseCase: LoadPodcastFromRSSUseCase(
+                        feedService: MockFeedService()
+                    ),
+                    repository: MockPodcastRepository()
                 ),
                 clearFeedCacheUseCase: ClearFeedCacheUseCase(
                     feedService: MockFeedService()
@@ -351,8 +363,11 @@ private extension AddPodcastView {
             manageHistoryUseCase: ManageFeedHistoryUseCase(
                 repository: MockFeedHistoryRepository()
             ),
-            loadPodcastUseCase: LoadPodcastFromRSSUseCase(
-                feedService: MockFeedService()
+            syncPodcastUseCase: SyncPodcastFeedUseCase(
+                loadPodcastUseCase: LoadPodcastFromRSSUseCase(
+                    feedService: MockFeedService()
+                ),
+                repository: MockPodcastRepository()
             ),
             clearFeedCacheUseCase: ClearFeedCacheUseCase(
                 feedService: MockFeedService()
@@ -372,8 +387,11 @@ private extension AddPodcastView {
             manageHistoryUseCase: ManageFeedHistoryUseCase(
                 repository: MockFeedHistoryRepository()
             ),
-            loadPodcastUseCase: LoadPodcastFromRSSUseCase(
-                feedService: MockFeedService()
+            syncPodcastUseCase: SyncPodcastFeedUseCase(
+                loadPodcastUseCase: LoadPodcastFromRSSUseCase(
+                    feedService: MockFeedService()
+                ),
+                repository: MockPodcastRepository()
             ),
             clearFeedCacheUseCase: ClearFeedCacheUseCase(
                 feedService: MockFeedService()

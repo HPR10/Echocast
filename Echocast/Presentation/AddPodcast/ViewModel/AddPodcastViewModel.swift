@@ -12,7 +12,7 @@ import Observation
 @MainActor
 final class AddPodcastViewModel {
     private let manageHistoryUseCase: ManageFeedHistoryUseCase
-    private let loadPodcastUseCase: LoadPodcastFromRSSUseCase
+    private let syncPodcastUseCase: SyncPodcastFeedUseCase
     private let clearFeedCacheUseCase: ClearFeedCacheUseCase
     private let clearImageCacheUseCase: ClearImageCacheUseCase
     private var loadTask: Task<Void, Never>?
@@ -25,12 +25,12 @@ final class AddPodcastViewModel {
 
     init(
         manageHistoryUseCase: ManageFeedHistoryUseCase,
-        loadPodcastUseCase: LoadPodcastFromRSSUseCase,
+        syncPodcastUseCase: SyncPodcastFeedUseCase,
         clearFeedCacheUseCase: ClearFeedCacheUseCase,
         clearImageCacheUseCase: ClearImageCacheUseCase
     ) {
         self.manageHistoryUseCase = manageHistoryUseCase
-        self.loadPodcastUseCase = loadPodcastUseCase
+        self.syncPodcastUseCase = syncPodcastUseCase
         self.clearFeedCacheUseCase = clearFeedCacheUseCase
         self.clearImageCacheUseCase = clearImageCacheUseCase
     }
@@ -104,7 +104,7 @@ final class AddPodcastViewModel {
         }
 
         do {
-            let podcast = try await loadPodcastUseCase.execute(from: url)
+            let podcast = try await syncPodcastUseCase.execute(from: url)
             guard isActive(requestID) else { return }
             await manageHistoryUseCase.addURL(url.absoluteString)
             guard isActive(requestID) else { return }
