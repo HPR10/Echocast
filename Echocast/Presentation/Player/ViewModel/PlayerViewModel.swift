@@ -21,11 +21,13 @@ final class PlayerViewModel {
     private var hasRestoredProgress = false
     private var lastProgressSaveTime: TimeInterval = 0
     private var lastKnownIsPlaying = false
+    private var bufferingVisibilityTask: Task<Void, Never>?
     private let progressSaveInterval: TimeInterval = 10
     private let skipForwardInterval: TimeInterval = 15
     private let skipBackwardInterval: TimeInterval = 30
     private let minPlaybackRate: Float = 0.5
     private let maxPlaybackRate: Float = 2.0
+    private let bufferingDisplayDelayNanoseconds: UInt64 = 300_000_000
 
     var isPlaying = false
     var isBuffering = false
@@ -133,6 +135,8 @@ final class PlayerViewModel {
         stateTask = nil
         eventTask?.cancel()
         eventTask = nil
+        bufferingVisibilityTask?.cancel()
+        bufferingVisibilityTask = nil
         playerService.teardown()
     }
 
@@ -164,8 +168,7 @@ final class PlayerViewModel {
         }
 
         isPlaying = state.isPlaying
-        isBuffering = state.isBuffering
-        bufferingMessage = state.isBuffering ? makeBufferingMessage(from: state.bufferingReason) : nil
+        updateBufferingUI(isBuffering: state.isBuffering, reason: state.bufferingReason)
         playbackRate = state.playbackRate
 
         restoreProgressIfNeeded()
@@ -262,6 +265,42 @@ final class PlayerViewModel {
 
     private func clearProgress() async {
         await manageProgressUseCase.clear(for: episode.playbackKey)
+    }
+
+    private func updateBufferingUI(isBuffering: Bool, reason: PlayerBufferingReason?) {
+        bufferingVisibilityTask?.cancel()
+
+        guard isBuffering else {
+            bufferingVisibilityTask = nil
+            self.isBuffering = false
+            bufferingMessage = nil
+            return
+        }
+
+        let message = makeBufferingMessage(from: reason)
+        if shouldShowBufferingImmediately(reason: reason) {
+            self.isBuffering = true
+            bufferingMessage = message
+            return
+        }
+
+        bufferingVisibilityTask = Task { @MainActor [weak self] in
+            guard let self = self else { return }
+            try? await Task.sleep(nanoseconds: bufferingDisplayDelayNanoseconds)
+            guard !Task.isCancelled else { return }
+            self.isBuffering = true
+            self.bufferingMessage = message
+        }
+    }
+
+    private func shouldShowBufferingImmediately(reason: PlayerBufferingReason?) -> Bool {
+        guard let reason else { return false }
+        switch reason {
+        case .noNetwork, .insufficientBuffer, .stalled:
+            return true
+        case .minimizeStalls, .evaluatingBufferingRate, .noItem, .unknown:
+            return false
+        }
     }
 
     private func seek(to time: TimeInterval) {
