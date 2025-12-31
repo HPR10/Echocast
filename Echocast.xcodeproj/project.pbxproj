@@ -53,18 +53,10 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		FA6C6D002F045744004DD929 /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Frameworks;
-			sourceTree = "<group>";
-		};
 		FAC5E4542EEA3BF900778E43 = {
 			isa = PBXGroup;
 			children = (
 				FAC5E45F2EEA3BF900778E43 /* Echocast */,
-				FA6C6D002F045744004DD929 /* Frameworks */,
 				FAC5E45E2EEA3BF900778E43 /* Products */,
 			);
 			sourceTree = "<group>";
