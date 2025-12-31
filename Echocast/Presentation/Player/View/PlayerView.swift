@@ -28,11 +28,6 @@ struct PlayerView: View {
         .padding()
         .navigationTitle("Player")
         .navigationBarTitleDisplayMode(.inline)
-        .onDisappear {
-            Task { @MainActor in
-                viewModel.teardown()
-            }
-        }
         .alert("Erro", isPresented: .init(
             get: { viewModel.errorMessage != nil },
             set: { if !$0 { viewModel.errorMessage = nil } }
@@ -138,6 +133,16 @@ private extension PlayerView {
         let maxDuration = max(viewModel.duration, 1)
 
         VStack(spacing: 8) {
+            if viewModel.isBuffering {
+                HStack(spacing: 8) {
+                    ProgressView()
+                    Text(viewModel.bufferingMessage ?? "Carregando...")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.leading)
+                }
+            }
+
             Slider(
                 value: Binding(
                     get: { viewModel.currentTime },

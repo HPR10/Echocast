@@ -20,8 +20,11 @@ final class PlayerViewModel {
     private var timeObserver: Any?
     private var statusObserver: NSKeyValueObservation?
     private var itemStatusObserver: NSKeyValueObservation?
+    private var waitingObserver: NSKeyValueObservation?
+    private var bufferLikelyToKeepUpObserver: NSKeyValueObservation?
     private var endObserver: NSObjectProtocol?
     private var failObserver: NSObjectProtocol?
+    private var playbackStalledObserver: NSObjectProtocol?
     private var interruptionObserver: NSObjectProtocol?
     private var routeChangeObserver: NSObjectProtocol?
     private let nowPlayingInfoCenter = MPNowPlayingInfoCenter.default()
@@ -41,6 +44,8 @@ final class PlayerViewModel {
     private let maxPlaybackRate: Float = 2.0
 
     var isPlaying = false
+    var isBuffering = false
+    var bufferingMessage: String?
     var errorMessage: String?
     var currentTime: TimeInterval = 0
     var duration: TimeInterval = 0
@@ -67,6 +72,9 @@ final class PlayerViewModel {
             AVPlayer(playerItem: AVPlayerItem(url: url))
         }
         self.player = player
+        if let feedDuration = episode.duration, feedDuration > 0 {
+            self.duration = feedDuration
+        }
 
         if let player {
             configureAudioSession()
@@ -157,6 +165,8 @@ final class PlayerViewModel {
 
         statusObserver = nil
         itemStatusObserver = nil
+        waitingObserver = nil
+        bufferLikelyToKeepUpObserver = nil
 
         if let endObserver {
             NotificationCenter.default.removeObserver(endObserver)
@@ -166,6 +176,11 @@ final class PlayerViewModel {
         if let failObserver {
             NotificationCenter.default.removeObserver(failObserver)
             self.failObserver = nil
+        }
+
+        if let playbackStalledObserver {
+            NotificationCenter.default.removeObserver(playbackStalledObserver)
+            self.playbackStalledObserver = nil
         }
     }
 
@@ -216,6 +231,15 @@ final class PlayerViewModel {
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 self.isPlaying = player.timeControlStatus == .playing
+                self.refreshBufferState(for: player)
+                self.updateNowPlayingInfo()
+            }
+        }
+
+        waitingObserver = player.observe(\.reasonForWaitingToPlay, options: [.initial, .new]) { [weak self] player, _ in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.refreshBufferState(for: player)
                 self.updateNowPlayingInfo()
             }
         }
@@ -234,7 +258,28 @@ final class PlayerViewModel {
                 if item.status == .failed {
                     self.errorMessage = item.error?.localizedDescription ?? "Falha ao reproduzir audio."
                     self.isPlaying = false
+                    self.isBuffering = false
+                    self.bufferingMessage = nil
                     self.updateNowPlayingInfo()
+                }
+            }
+        }
+
+        bufferLikelyToKeepUpObserver = player.currentItem?.observe(
+            \.isPlaybackLikelyToKeepUp,
+            options: [.initial, .new]
+        ) { [weak self] item, _ in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                if item.isPlaybackLikelyToKeepUp {
+                    self.isBuffering = false
+                    self.bufferingMessage = nil
+                } else {
+                    self.isBuffering = true
+                    self.bufferingMessage = self.makeBufferingMessage(
+                        from: player.reasonForWaitingToPlay,
+                        isLikelyToKeepUp: false
+                    )
                 }
             }
         }
@@ -249,6 +294,8 @@ final class PlayerViewModel {
                 self.isPlaying = false
                 self.currentTime = self.duration
                 await self.clearProgress()
+                self.isBuffering = false
+                self.bufferingMessage = nil
                 self.updateNowPlayingInfo()
             }
         }
@@ -263,6 +310,22 @@ final class PlayerViewModel {
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 self.errorMessage = message
+                self.isPlaying = false
+                self.isBuffering = false
+                self.bufferingMessage = nil
+                self.updateNowPlayingInfo()
+            }
+        }
+
+        playbackStalledObserver = NotificationCenter.default.addObserver(
+            forName: .AVPlayerItemPlaybackStalled,
+            object: player.currentItem,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.isBuffering = true
+                self.bufferingMessage = "Reproducao interrompida, tentando retomar..."
                 self.isPlaying = false
                 self.updateNowPlayingInfo()
             }
@@ -351,6 +414,47 @@ final class PlayerViewModel {
 
     private func configureNowPlayingInfo() {
         updateNowPlayingInfo()
+    }
+
+    private func refreshBufferState(for player: AVPlayer) {
+        let status = player.timeControlStatus
+        let isWaiting = status == .waitingToPlayAtSpecifiedRate
+        let likelyToKeepUp = player.currentItem?.isPlaybackLikelyToKeepUp ?? true
+
+        if isWaiting || !likelyToKeepUp {
+            isBuffering = true
+            bufferingMessage = makeBufferingMessage(
+                from: player.reasonForWaitingToPlay,
+                isLikelyToKeepUp: likelyToKeepUp
+            )
+        } else {
+            isBuffering = false
+            bufferingMessage = nil
+        }
+    }
+
+    private func makeBufferingMessage(
+        from reason: AVPlayer.WaitingReason?,
+        isLikelyToKeepUp: Bool
+    ) -> String {
+        if !isLikelyToKeepUp {
+            return "Carregando para continuar a reproducao..."
+        }
+
+        guard let reason else {
+            return "Carregando..."
+        }
+
+        switch reason {
+        case .toMinimizeStalls:
+            return "Carregando para evitar interrupcoes..."
+        case .evaluatingBufferingRate:
+            return "Avaliando velocidade da conexao..."
+        case .noItemToPlay:
+            return "Preparando o episodio..."
+        default:
+            return "Carregando..."
+        }
     }
 
     private func loadSavedProgress() async {
@@ -531,3 +635,4 @@ final class PlayerViewModel {
         return formatter
     }()
 }
+
