@@ -636,3 +636,33 @@ final class PlayerViewModel {
     }()
 }
 
+@Observable
+@MainActor
+final class PlayerCoordinator {
+    private let manageProgressUseCase: ManagePlaybackProgressUseCase
+    private(set) var viewModel: PlayerViewModel?
+
+    init(manageProgressUseCase: ManagePlaybackProgressUseCase) {
+        self.manageProgressUseCase = manageProgressUseCase
+    }
+
+    func prepare(episode: Episode, podcastTitle: String) -> PlayerViewModel {
+        if let viewModel, viewModel.episode.playbackKey == episode.playbackKey {
+            return viewModel
+        }
+
+        viewModel?.teardown()
+        let nextViewModel = PlayerViewModel(
+            episode: episode,
+            podcastTitle: podcastTitle,
+            manageProgressUseCase: manageProgressUseCase
+        )
+        viewModel = nextViewModel
+        return nextViewModel
+    }
+
+    func stopPlayback() {
+        viewModel?.teardown()
+        viewModel = nil
+    }
+}

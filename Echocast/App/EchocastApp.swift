@@ -13,6 +13,7 @@ struct EchocastApp: App {
     let container: ModelContainer
     let addPodcastViewModel: AddPodcastViewModel
     let playbackProgressUseCase: ManagePlaybackProgressUseCase
+    let playerCoordinator: PlayerCoordinator
 
     init() {
         do {
@@ -53,6 +54,9 @@ struct EchocastApp: App {
                 )
             )
             self.playbackProgressUseCase = playbackProgressUseCase
+            playerCoordinator = PlayerCoordinator(
+                manageProgressUseCase: playbackProgressUseCase
+            )
         } catch {
             fatalError("Failed to create ModelContainer: \(error)")
         }
@@ -61,9 +65,9 @@ struct EchocastApp: App {
     var body: some Scene {
         WindowGroup {
             AddPodcastView(
-                viewModel: addPodcastViewModel,
-                manageProgressUseCase: playbackProgressUseCase
+                viewModel: addPodcastViewModel
             )
+            .environment(playerCoordinator)
         }
         .modelContainer(container)
     }

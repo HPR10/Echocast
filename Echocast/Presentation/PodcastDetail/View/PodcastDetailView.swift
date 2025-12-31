@@ -10,7 +10,6 @@ import NukeUI
 
 struct PodcastDetailView: View {
     let viewModel: PodcastDetailViewModel
-    let manageProgressUseCase: ManagePlaybackProgressUseCase
 
     var body: some View {
         VStack(spacing: 24) {
@@ -20,12 +19,9 @@ struct PodcastDetailView: View {
         .navigationTitle(viewModel.podcast.title)
         .toolbarTitleDisplayMode(.large)
         .navigationDestination(for: Episode.self) { episode in
-            PlayerView(
-                viewModel: PlayerViewModel(
-                    episode: episode,
-                    podcastTitle: viewModel.podcast.title,
-                    manageProgressUseCase: manageProgressUseCase
-                )
+            PlayerRouteView(
+                episode: episode,
+                podcastTitle: viewModel.podcast.title
             )
         }
     }
@@ -158,12 +154,16 @@ private struct EpisodeRow: View {
                         Episode(title: "Episode 2: Advanced Combine", duration: 2700, publishedAt: Date().addingTimeInterval(-86400))
                     ]
                 )
-            ),
+            )
+        )
+    }
+    .environment(
+        PlayerCoordinator(
             manageProgressUseCase: ManagePlaybackProgressUseCase(
                 repository: MockPlaybackProgressRepository()
             )
         )
-    }
+    )
 }
 
 #Preview("Sem Episodios") {
@@ -174,10 +174,14 @@ private struct EpisodeRow: View {
                     title: "Novo Podcast",
                     feedURL: URL(string: "https://example.com/feed")!
                 )
-            ),
+            )
+        )
+    }
+    .environment(
+        PlayerCoordinator(
             manageProgressUseCase: ManagePlaybackProgressUseCase(
                 repository: MockPlaybackProgressRepository()
             )
         )
-    }
+    )
 }

@@ -8,12 +8,22 @@
 import SwiftUI
 import Observation
 
-struct PlayerView: View {
-    @State private var viewModel: PlayerViewModel
+struct PlayerRouteView: View {
+    @Environment(PlayerCoordinator.self) private var playerCoordinator
+    let episode: Episode
+    let podcastTitle: String
 
-    init(viewModel: PlayerViewModel) {
-        _viewModel = State(initialValue: viewModel)
+    var body: some View {
+        let viewModel = playerCoordinator.prepare(
+            episode: episode,
+            podcastTitle: podcastTitle
+        )
+        PlayerView(viewModel: viewModel)
     }
+}
+
+struct PlayerView: View {
+    let viewModel: PlayerViewModel
 
     var body: some View {
         @Bindable var viewModel = viewModel

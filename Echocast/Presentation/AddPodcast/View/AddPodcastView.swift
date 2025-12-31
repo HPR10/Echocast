@@ -14,14 +14,9 @@ struct AddPodcastView: View {
     @State private var navigationPath = NavigationPath()
     @State private var showClearCacheConfirmation = false
     @Query(sort: \FeedHistoryItem.addedAt, order: .reverse) private var feedHistory: [FeedHistoryItem]
-    private let manageProgressUseCase: ManagePlaybackProgressUseCase
 
-    init(
-        viewModel: AddPodcastViewModel,
-        manageProgressUseCase: ManagePlaybackProgressUseCase
-    ) {
+    init(viewModel: AddPodcastViewModel) {
         _viewModel = State(initialValue: viewModel)
-        self.manageProgressUseCase = manageProgressUseCase
     }
 
     var body: some View {
@@ -45,8 +40,7 @@ struct AddPodcastView: View {
             .padding()
             .navigationDestination(for: Podcast.self) { podcast in
                 PodcastDetailView(
-                    viewModel: PodcastDetailViewModel(podcast: podcast),
-                    manageProgressUseCase: manageProgressUseCase
+                    viewModel: PodcastDetailViewModel(podcast: podcast)
                 )
             }
             .toolbar {
@@ -202,12 +196,16 @@ private extension AddPodcastView {
             clearImageCacheUseCase: ClearImageCacheUseCase(
                 imageCacheService: MockImageCacheService()
             )
-        ),
-        manageProgressUseCase: ManagePlaybackProgressUseCase(
-            repository: MockPlaybackProgressRepository()
         )
     )
     .modelContainer(for: FeedHistoryItem.self, inMemory: true)
+    .environment(
+        PlayerCoordinator(
+            manageProgressUseCase: ManagePlaybackProgressUseCase(
+                repository: MockPlaybackProgressRepository()
+            )
+        )
+    )
 }
 
 #Preview("Com Histórico") {
@@ -243,12 +241,16 @@ private extension AddPodcastView {
             clearImageCacheUseCase: ClearImageCacheUseCase(
                 imageCacheService: MockImageCacheService()
             )
-        ),
-        manageProgressUseCase: ManagePlaybackProgressUseCase(
-            repository: MockPlaybackProgressRepository()
         )
     )
     .modelContainer(container)
+    .environment(
+        PlayerCoordinator(
+            manageProgressUseCase: ManagePlaybackProgressUseCase(
+                repository: MockPlaybackProgressRepository()
+            )
+        )
+    )
 }
 
 #Preview("URL Inválida") {
@@ -387,13 +389,17 @@ private extension AddPodcastView {
             clearImageCacheUseCase: ClearImageCacheUseCase(
                 imageCacheService: MockImageCacheService()
             )
-        ),
-        manageProgressUseCase: ManagePlaybackProgressUseCase(
-            repository: MockPlaybackProgressRepository()
         )
     )
     .modelContainer(for: FeedHistoryItem.self, inMemory: true)
     .preferredColorScheme(.dark)
+    .environment(
+        PlayerCoordinator(
+            manageProgressUseCase: ManagePlaybackProgressUseCase(
+                repository: MockPlaybackProgressRepository()
+            )
+        )
+    )
 }
 
 #Preview("Landscape", traits: .landscapeLeft) {
@@ -414,10 +420,14 @@ private extension AddPodcastView {
             clearImageCacheUseCase: ClearImageCacheUseCase(
                 imageCacheService: MockImageCacheService()
             )
-        ),
-        manageProgressUseCase: ManagePlaybackProgressUseCase(
-            repository: MockPlaybackProgressRepository()
         )
     )
     .modelContainer(for: FeedHistoryItem.self, inMemory: true)
+    .environment(
+        PlayerCoordinator(
+            manageProgressUseCase: ManagePlaybackProgressUseCase(
+                repository: MockPlaybackProgressRepository()
+            )
+        )
+    )
 }
