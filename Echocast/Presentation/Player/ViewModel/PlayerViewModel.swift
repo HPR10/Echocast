@@ -7,6 +7,7 @@
 
 import AVFoundation
 import Foundation
+import MediaPlayer
 import Observation
 
 @Observable
@@ -20,6 +21,12 @@ final class PlayerViewModel {
     private var itemStatusObserver: NSKeyValueObservation?
     private var endObserver: NSObjectProtocol?
     private var failObserver: NSObjectProtocol?
+    private let nowPlayingInfoCenter = MPNowPlayingInfoCenter.default()
+    private let remoteCommandCenter = MPRemoteCommandCenter.shared()
+    private var playCommandTarget: Any?
+    private var pauseCommandTarget: Any?
+    private var toggleCommandTarget: Any?
+    private var changePlaybackPositionTarget: Any?
 
     var isPlaying = false
     var errorMessage: String?
@@ -38,6 +45,8 @@ final class PlayerViewModel {
         if let player {
             configureAudioSession()
             setupObservers(for: player)
+            configureNowPlayingInfo()
+            setupRemoteCommands()
         }
     }
 
@@ -58,18 +67,16 @@ final class PlayerViewModel {
     }
 
     func togglePlayback() {
-        guard let player else {
+        guard player != nil else {
             errorMessage = "Audio indisponivel para este episodio."
             return
         }
 
         errorMessage = nil
         if isPlaying {
-            player.pause()
-            isPlaying = false
+            pausePlayback()
         } else {
-            player.play()
-            isPlaying = true
+            startPlayback()
         }
     }
 
@@ -83,12 +90,14 @@ final class PlayerViewModel {
     }
 
     func stop() {
-        player?.pause()
-        isPlaying = false
+        pausePlayback()
     }
 
     func teardown() {
         stop()
+        teardownRemoteCommands()
+        clearNowPlayingInfo()
+        deactivateAudioSession()
 
         if let timeObserver {
             player?.removeTimeObserver(timeObserver)
@@ -114,10 +123,18 @@ final class PlayerViewModel {
     private func configureAudioSession() {
         do {
             let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playback, mode: .spokenAudio)
+            try session.setCategory(.playback, mode: .spokenAudio, options: [.allowAirPlay, .allowBluetoothHFP])
             try session.setActive(true)
         } catch {
             errorMessage = "Falha ao configurar audio."
+        }
+    }
+
+    private func deactivateAudioSession() {
+        do {
+            try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        } catch {
+            return
         }
     }
 
@@ -132,9 +149,13 @@ final class PlayerViewModel {
                     self.currentTime = time.seconds
                 }
 
-                if let duration = self.player?.currentItem?.duration.seconds, duration.isFinite {
-                    self.duration = duration
+                if let currentItem = self.player?.currentItem {
+                    let duration = currentItem.duration.seconds
+                    if duration.isFinite {
+                        self.duration = duration
+                    }
                 }
+                self.updateNowPlayingInfo()
             }
         }
 
@@ -142,15 +163,24 @@ final class PlayerViewModel {
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 self.isPlaying = player.timeControlStatus == .playing
+                self.updateNowPlayingInfo()
             }
         }
 
         itemStatusObserver = player.currentItem?.observe(\.status, options: [.initial, .new]) { [weak self] item, _ in
             Task { @MainActor [weak self] in
                 guard let self else { return }
+                if item.status == .readyToPlay {
+                    let duration = item.duration.seconds
+                    if duration.isFinite {
+                        self.duration = duration
+                    }
+                    self.updateNowPlayingInfo()
+                }
                 if item.status == .failed {
                     self.errorMessage = item.error?.localizedDescription ?? "Falha ao reproduzir audio."
                     self.isPlaying = false
+                    self.updateNowPlayingInfo()
                 }
             }
         }
@@ -164,6 +194,7 @@ final class PlayerViewModel {
                 guard let self else { return }
                 self.isPlaying = false
                 self.currentTime = self.duration
+                self.updateNowPlayingInfo()
             }
         }
 
@@ -178,8 +209,113 @@ final class PlayerViewModel {
                 guard let self else { return }
                 self.errorMessage = message
                 self.isPlaying = false
+                self.updateNowPlayingInfo()
             }
         }
+    }
+
+    private func configureNowPlayingInfo() {
+        updateNowPlayingInfo()
+    }
+
+    private func updateNowPlayingInfo() {
+        guard player != nil else { return }
+
+        var info = nowPlayingInfoCenter.nowPlayingInfo ?? [:]
+        info[MPMediaItemPropertyTitle] = episode.title
+        info[MPMediaItemPropertyAlbumTitle] = podcastTitle
+
+        if duration > 0 && duration.isFinite {
+            info[MPMediaItemPropertyPlaybackDuration] = duration
+        }
+
+        info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = currentTime
+        info[MPNowPlayingInfoPropertyPlaybackRate] = isPlaying ? 1.0 : 0.0
+        info[MPNowPlayingInfoPropertyDefaultPlaybackRate] = 1.0
+
+        nowPlayingInfoCenter.nowPlayingInfo = info
+        nowPlayingInfoCenter.playbackState = isPlaying ? .playing : .paused
+    }
+
+    private func clearNowPlayingInfo() {
+        nowPlayingInfoCenter.nowPlayingInfo = nil
+        nowPlayingInfoCenter.playbackState = .stopped
+    }
+
+    private func setupRemoteCommands() {
+        guard player != nil else { return }
+
+        remoteCommandCenter.playCommand.isEnabled = true
+        remoteCommandCenter.pauseCommand.isEnabled = true
+        remoteCommandCenter.togglePlayPauseCommand.isEnabled = true
+        remoteCommandCenter.changePlaybackPositionCommand.isEnabled = true
+
+        playCommandTarget = remoteCommandCenter.playCommand.addTarget { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.startPlayback()
+            }
+            return .success
+        }
+
+        pauseCommandTarget = remoteCommandCenter.pauseCommand.addTarget { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.pausePlayback()
+            }
+            return .success
+        }
+
+        toggleCommandTarget = remoteCommandCenter.togglePlayPauseCommand.addTarget { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.togglePlayback()
+            }
+            return .success
+        }
+
+        changePlaybackPositionTarget = remoteCommandCenter.changePlaybackPositionCommand.addTarget { [weak self] event in
+            guard let event = event as? MPChangePlaybackPositionCommandEvent else {
+                return .commandFailed
+            }
+            Task { @MainActor [weak self] in
+                self?.seek(to: event.positionTime)
+            }
+            return .success
+        }
+    }
+
+    private func teardownRemoteCommands() {
+        if let playCommandTarget {
+            remoteCommandCenter.playCommand.removeTarget(playCommandTarget)
+            self.playCommandTarget = nil
+        }
+        if let pauseCommandTarget {
+            remoteCommandCenter.pauseCommand.removeTarget(pauseCommandTarget)
+            self.pauseCommandTarget = nil
+        }
+        if let toggleCommandTarget {
+            remoteCommandCenter.togglePlayPauseCommand.removeTarget(toggleCommandTarget)
+            self.toggleCommandTarget = nil
+        }
+        if let changePlaybackPositionTarget {
+            remoteCommandCenter.changePlaybackPositionCommand.removeTarget(changePlaybackPositionTarget)
+            self.changePlaybackPositionTarget = nil
+        }
+
+        remoteCommandCenter.playCommand.isEnabled = false
+        remoteCommandCenter.pauseCommand.isEnabled = false
+        remoteCommandCenter.togglePlayPauseCommand.isEnabled = false
+        remoteCommandCenter.changePlaybackPositionCommand.isEnabled = false
+    }
+
+    private func startPlayback() {
+        player?.play()
+        isPlaying = true
+        updateNowPlayingInfo()
+    }
+
+    private func pausePlayback() {
+        player?.pause()
+        isPlaying = false
+        updateNowPlayingInfo()
     }
 
     private func seek(to time: TimeInterval) {
@@ -187,6 +323,8 @@ final class PlayerViewModel {
         let clamped = max(0, min(time, duration))
         let target = CMTime(seconds: clamped, preferredTimescale: 600)
         player.seek(to: target, toleranceBefore: .zero, toleranceAfter: .zero)
+        currentTime = clamped
+        updateNowPlayingInfo()
     }
 
     private func formatTime(_ seconds: TimeInterval) -> String {
@@ -202,3 +340,4 @@ final class PlayerViewModel {
         return formatter
     }()
 }
+
