@@ -518,7 +518,7 @@ final class AudioPlayerService: AudioPlayerServiceProtocol {
                 return (true, .noItem)
             case .none:
                 return (true, .unknown)
-            @unknown default:
+            default:
                 return (true, .unknown)
             }
         }
