@@ -161,7 +161,8 @@ private struct EpisodeRow: View {
         PlayerCoordinator(
             manageProgressUseCase: ManagePlaybackProgressUseCase(
                 repository: MockPlaybackProgressRepository()
-            )
+            ),
+            playerService: MockAudioPlayerService()
         )
     )
 }
@@ -181,7 +182,8 @@ private struct EpisodeRow: View {
         PlayerCoordinator(
             manageProgressUseCase: ManagePlaybackProgressUseCase(
                 repository: MockPlaybackProgressRepository()
-            )
+            ),
+            playerService: MockAudioPlayerService()
         )
     )
 }

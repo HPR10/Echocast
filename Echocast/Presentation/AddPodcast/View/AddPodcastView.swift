@@ -203,7 +203,8 @@ private extension AddPodcastView {
         PlayerCoordinator(
             manageProgressUseCase: ManagePlaybackProgressUseCase(
                 repository: MockPlaybackProgressRepository()
-            )
+            ),
+            playerService: MockAudioPlayerService()
         )
     )
 }
@@ -248,7 +249,8 @@ private extension AddPodcastView {
         PlayerCoordinator(
             manageProgressUseCase: ManagePlaybackProgressUseCase(
                 repository: MockPlaybackProgressRepository()
-            )
+            ),
+            playerService: MockAudioPlayerService()
         )
     )
 }
@@ -397,7 +399,8 @@ private extension AddPodcastView {
         PlayerCoordinator(
             manageProgressUseCase: ManagePlaybackProgressUseCase(
                 repository: MockPlaybackProgressRepository()
-            )
+            ),
+            playerService: MockAudioPlayerService()
         )
     )
 }
@@ -427,7 +430,8 @@ private extension AddPodcastView {
         PlayerCoordinator(
             manageProgressUseCase: ManagePlaybackProgressUseCase(
                 repository: MockPlaybackProgressRepository()
-            )
+            ),
+            playerService: MockAudioPlayerService()
         )
     )
 }

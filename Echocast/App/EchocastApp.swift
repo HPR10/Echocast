@@ -13,6 +13,7 @@ struct EchocastApp: App {
     let container: ModelContainer
     let addPodcastViewModel: AddPodcastViewModel
     let playbackProgressUseCase: ManagePlaybackProgressUseCase
+    let audioPlayerService: AudioPlayerService
     let playerCoordinator: PlayerCoordinator
 
     init() {
@@ -36,6 +37,7 @@ struct EchocastApp: App {
                     modelContext: container.mainContext
                 )
             )
+            let audioPlayerService = AudioPlayerService()
             addPodcastViewModel = AddPodcastViewModel(
                 manageHistoryUseCase: ManageFeedHistoryUseCase(
                     repository: FeedHistoryRepository(
@@ -54,8 +56,10 @@ struct EchocastApp: App {
                 )
             )
             self.playbackProgressUseCase = playbackProgressUseCase
+            self.audioPlayerService = audioPlayerService
             playerCoordinator = PlayerCoordinator(
-                manageProgressUseCase: playbackProgressUseCase
+                manageProgressUseCase: playbackProgressUseCase,
+                playerService: audioPlayerService
             )
         } catch {
             fatalError("Failed to create ModelContainer: \(error)")

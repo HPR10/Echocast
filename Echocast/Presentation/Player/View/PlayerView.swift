@@ -198,7 +198,8 @@ private extension PlayerView {
                 podcastTitle: "Podcast de Teste",
                 manageProgressUseCase: ManagePlaybackProgressUseCase(
                     repository: MockPlaybackProgressRepository()
-                )
+                ),
+                playerService: MockAudioPlayerService()
             )
         )
     }
@@ -215,7 +216,8 @@ private extension PlayerView {
                 podcastTitle: "Podcast de Teste",
                 manageProgressUseCase: ManagePlaybackProgressUseCase(
                     repository: MockPlaybackProgressRepository()
-                )
+                ),
+                playerService: MockAudioPlayerService()
             )
         )
     }

@@ -5,9 +5,7 @@
 //  Created by Hugo Pinheiro on 21/12/25.
 //
 
-import AVFoundation
 import Foundation
-import MediaPlayer
 import Observation
 
 @Observable
@@ -16,30 +14,13 @@ final class PlayerViewModel {
     let episode: Episode
     let podcastTitle: String
     private let manageProgressUseCase: ManagePlaybackProgressUseCase
-    private let player: AVPlayer?
-    private var timeObserver: Any?
-    private var statusObserver: NSKeyValueObservation?
-    private var itemStatusObserver: NSKeyValueObservation?
-    private var waitingObserver: NSKeyValueObservation?
-    private var bufferLikelyToKeepUpObserver: NSKeyValueObservation?
-    private var endObserver: NSObjectProtocol?
-    private var failObserver: NSObjectProtocol?
-    private var playbackStalledObserver: NSObjectProtocol?
-    private var interruptionObserver: NSObjectProtocol?
-    private var routeChangeObserver: NSObjectProtocol?
-    private let nowPlayingInfoCenter = MPNowPlayingInfoCenter.default()
-    private let remoteCommandCenter = MPRemoteCommandCenter.shared()
-    private var playCommandTarget: Any?
-    private var pauseCommandTarget: Any?
-    private var toggleCommandTarget: Any?
-    private var changePlaybackPositionTarget: Any?
-    private var skipForwardCommandTarget: Any?
-    private var skipBackwardCommandTarget: Any?
-    private var changePlaybackRateTarget: Any?
-    private var wasPlayingBeforeInterruption = false
+    private let playerService: AudioPlayerServiceProtocol
+    private var stateTask: Task<Void, Never>?
+    private var eventTask: Task<Void, Never>?
     private var pendingResumeTime: TimeInterval?
     private var hasRestoredProgress = false
     private var lastProgressSaveTime: TimeInterval = 0
+    private var lastKnownIsPlaying = false
     private let progressSaveInterval: TimeInterval = 10
     private let skipForwardInterval: TimeInterval = 15
     private let skipBackwardInterval: TimeInterval = 30
@@ -66,27 +47,19 @@ final class PlayerViewModel {
     init(
         episode: Episode,
         podcastTitle: String,
-        manageProgressUseCase: ManagePlaybackProgressUseCase
+        manageProgressUseCase: ManagePlaybackProgressUseCase,
+        playerService: AudioPlayerServiceProtocol
     ) {
         self.episode = episode
         self.podcastTitle = podcastTitle
         self.manageProgressUseCase = manageProgressUseCase
-        let player = episode.audioURL.map { url in
-            let item = AVPlayerItem(url: url)
-            item.audioTimePitchAlgorithm = .timeDomain
-            return AVPlayer(playerItem: item)
-        }
-        self.player = player
+        self.playerService = playerService
         if let feedDuration = episode.duration, feedDuration > 0 {
             self.duration = feedDuration
         }
 
-        if let player {
-            setupObservers(for: player)
-            configureNowPlayingInfo()
-            setupRemoteCommands()
-            setupAudioSessionObservers()
-        }
+        playerService.load(episode: episode, podcastTitle: podcastTitle)
+        startObserving()
 
         Task { @MainActor in
             await loadSavedProgress()
@@ -110,26 +83,24 @@ final class PlayerViewModel {
     }
 
     func togglePlayback() {
-        guard player != nil else {
+        guard hasAudio else {
             errorMessage = "Audio indisponivel para este episodio."
             return
         }
 
         errorMessage = nil
         if isPlaying {
-            pausePlayback()
+            playerService.pause()
+            saveProgress(force: true)
         } else {
-            startPlayback()
+            playerService.play()
         }
     }
 
     func setPlaybackRate(_ rate: Float) {
         let clamped = max(minPlaybackRate, min(rate, maxPlaybackRate))
         playbackRate = clamped
-        if isPlaying {
-            player?.rate = clamped
-            updateNowPlayingInfo()
-        }
+        playerService.setRate(clamped)
     }
 
     func skipForward() {
@@ -151,329 +122,95 @@ final class PlayerViewModel {
     }
 
     func stop() {
-        pausePlayback()
+        playerService.pause()
+        saveProgress(force: true)
     }
 
     func teardown() {
         stop()
         saveProgress(force: true)
-        teardownRemoteCommands()
-        clearNowPlayingInfo()
-        teardownAudioSessionObservers()
-        deactivateAudioSession()
-
-        if let timeObserver {
-            player?.removeTimeObserver(timeObserver)
-            self.timeObserver = nil
-        }
-
-        statusObserver = nil
-        itemStatusObserver = nil
-        waitingObserver = nil
-        bufferLikelyToKeepUpObserver = nil
-
-        if let endObserver {
-            NotificationCenter.default.removeObserver(endObserver)
-            self.endObserver = nil
-        }
-
-        if let failObserver {
-            NotificationCenter.default.removeObserver(failObserver)
-            self.failObserver = nil
-        }
-
-        if let playbackStalledObserver {
-            NotificationCenter.default.removeObserver(playbackStalledObserver)
-            self.playbackStalledObserver = nil
-        }
+        stateTask?.cancel()
+        stateTask = nil
+        eventTask?.cancel()
+        eventTask = nil
+        playerService.teardown()
     }
 
     // MARK: - Private
 
-    @discardableResult
-    private func configureAudioSession() -> Bool {
-        do {
-            let session = AVAudioSession.sharedInstance()
-            try session.setCategory(
-                .playback,
-                mode: .spokenAudio,
-                options: [.allowAirPlay, .allowBluetoothA2DP]
-            )
-            return true
-        } catch {
-            errorMessage = "Falha ao configurar audio."
-            return false
-        }
-    }
-
-    private func activateAudioSession() -> Bool {
-        guard configureAudioSession() else { return false }
-        do {
-            try AVAudioSession.sharedInstance().setActive(true)
-            return true
-        } catch {
-            errorMessage = "Falha ao ativar audio."
-            return false
-        }
-    }
-
-    private func deactivateAudioSession() {
-        do {
-            try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-        } catch {
-            return
-        }
-    }
-
-    private func setupObservers(for player: AVPlayer) {
-        timeObserver = player.addPeriodicTimeObserver(
-            forInterval: CMTime(seconds: 0.5, preferredTimescale: 600),
-            queue: .main
-        ) { [weak self] time in
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                if !self.isScrubbing {
-                    self.currentTime = time.seconds
-                }
-
-                if let currentItem = self.player?.currentItem {
-                    let duration = currentItem.duration.seconds
-                    if duration.isFinite {
-                        self.duration = duration
-                    }
-                }
-                self.restoreProgressIfNeeded()
-                self.saveProgress()
-                self.updateNowPlayingInfo()
+    private func startObserving() {
+        stateTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            for await state in playerService.observeState() {
+                self.applyState(state)
             }
         }
 
-        statusObserver = player.observe(\.timeControlStatus, options: [.initial, .new]) { [weak self] player, _ in
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                self.isPlaying = player.timeControlStatus == .playing
-                self.refreshBufferState(for: player)
-                self.updateNowPlayingInfo()
-            }
-        }
-
-        waitingObserver = player.observe(\.reasonForWaitingToPlay, options: [.initial, .new]) { [weak self] player, _ in
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                self.refreshBufferState(for: player)
-                self.updateNowPlayingInfo()
-            }
-        }
-
-        itemStatusObserver = player.currentItem?.observe(\.status, options: [.initial, .new]) { [weak self] item, _ in
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                if item.status == .readyToPlay {
-                    let duration = item.duration.seconds
-                    if duration.isFinite {
-                        self.duration = duration
-                    }
-                    self.restoreProgressIfNeeded()
-                    self.updateNowPlayingInfo()
-                }
-                if item.status == .failed {
-                    self.errorMessage = item.error?.localizedDescription ?? "Falha ao reproduzir audio."
-                    self.isPlaying = false
-                    self.isBuffering = false
-                    self.bufferingMessage = nil
-                    self.updateNowPlayingInfo()
-                }
-            }
-        }
-
-        bufferLikelyToKeepUpObserver = player.currentItem?.observe(
-            \.isPlaybackLikelyToKeepUp,
-            options: [.initial, .new]
-        ) { [weak self] item, _ in
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                if item.isPlaybackLikelyToKeepUp {
-                    self.isBuffering = false
-                    self.bufferingMessage = nil
-                } else {
-                    self.isBuffering = true
-                    self.bufferingMessage = self.makeBufferingMessage(
-                        from: player.reasonForWaitingToPlay,
-                        isLikelyToKeepUp: false
-                    )
-                }
-            }
-        }
-
-        endObserver = NotificationCenter.default.addObserver(
-            forName: .AVPlayerItemDidPlayToEndTime,
-            object: player.currentItem,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                self.isPlaying = false
-                self.currentTime = self.duration
-                await self.clearProgress()
-                self.isBuffering = false
-                self.bufferingMessage = nil
-                self.updateNowPlayingInfo()
-            }
-        }
-
-        failObserver = NotificationCenter.default.addObserver(
-            forName: .AVPlayerItemFailedToPlayToEndTime,
-            object: player.currentItem,
-            queue: .main
-        ) { [weak self] notification in
-            let message = (notification.userInfo?[AVPlayerItemFailedToPlayToEndTimeErrorKey] as? Error)?
-                .localizedDescription ?? "Falha ao reproduzir audio."
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                self.errorMessage = message
-                self.isPlaying = false
-                self.isBuffering = false
-                self.bufferingMessage = nil
-                self.updateNowPlayingInfo()
-            }
-        }
-
-        playbackStalledObserver = NotificationCenter.default.addObserver(
-            forName: .AVPlayerItemPlaybackStalled,
-            object: player.currentItem,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                self.isBuffering = true
-                self.bufferingMessage = "Reproducao interrompida, tentando retomar..."
-                self.isPlaying = false
-                self.updateNowPlayingInfo()
+        eventTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            for await event in playerService.observeEvents() {
+                self.applyEvent(event)
             }
         }
     }
 
-    private func setupAudioSessionObservers() {
-        interruptionObserver = NotificationCenter.default.addObserver(
-            forName: AVAudioSession.interruptionNotification,
-            object: AVAudioSession.sharedInstance(),
-            queue: .main
-        ) { [weak self] notification in
-            let userInfo = notification.userInfo
-            let typeValue = userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt
-            let optionsValue = userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt
-            Task { @MainActor [weak self] in
-                self?.handleAudioSessionInterruption(typeValue: typeValue, optionsValue: optionsValue)
-            }
+    private func applyState(_ state: PlayerState) {
+        if !isScrubbing {
+            currentTime = state.currentTime
         }
 
-        routeChangeObserver = NotificationCenter.default.addObserver(
-            forName: AVAudioSession.routeChangeNotification,
-            object: AVAudioSession.sharedInstance(),
-            queue: .main
-        ) { [weak self] notification in
-            let userInfo = notification.userInfo
-            let reasonValue = userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt
-            Task { @MainActor [weak self] in
-                self?.handleAudioSessionRouteChange(reasonValue: reasonValue)
-            }
-        }
-    }
-
-    private func teardownAudioSessionObservers() {
-        if let interruptionObserver {
-            NotificationCenter.default.removeObserver(interruptionObserver)
-            self.interruptionObserver = nil
-        }
-        if let routeChangeObserver {
-            NotificationCenter.default.removeObserver(routeChangeObserver)
-            self.routeChangeObserver = nil
-        }
-        wasPlayingBeforeInterruption = false
-    }
-
-    private func handleAudioSessionInterruption(typeValue: UInt?, optionsValue: UInt?) {
-        guard let typeValue, let type = AVAudioSession.InterruptionType(rawValue: typeValue) else {
-            return
+        if state.duration > 0 && state.duration.isFinite {
+            duration = state.duration
         }
 
-        switch type {
-        case .began:
-            wasPlayingBeforeInterruption = isPlaying
-            pausePlayback()
-        case .ended:
-            let options = AVAudioSession.InterruptionOptions(rawValue: optionsValue ?? 0)
-            if options.contains(.shouldResume), wasPlayingBeforeInterruption {
-                startPlayback()
-            }
-            wasPlayingBeforeInterruption = false
-        @unknown default:
-            break
-        }
-    }
+        isPlaying = state.isPlaying
+        isBuffering = state.isBuffering
+        bufferingMessage = state.isBuffering ? makeBufferingMessage(from: state.bufferingReason) : nil
+        playbackRate = state.playbackRate
 
-    private func handleAudioSessionRouteChange(reasonValue: UInt?) {
-        guard let reasonValue, let reason = AVAudioSession.RouteChangeReason(rawValue: reasonValue) else {
-            return
-        }
+        restoreProgressIfNeeded()
 
-        switch reason {
-        case .oldDeviceUnavailable:
-            pausePlayback()
-        case .newDeviceAvailable,
-             .categoryChange,
-             .override,
-             .wakeFromSleep,
-             .noSuitableRouteForCategory,
-             .routeConfigurationChange,
-             .unknown:
-            break
-        @unknown default:
-            break
-        }
-    }
-
-    private func configureNowPlayingInfo() {
-        updateNowPlayingInfo()
-    }
-
-    private func refreshBufferState(for player: AVPlayer) {
-        let status = player.timeControlStatus
-        let isWaiting = status == .waitingToPlayAtSpecifiedRate
-        let likelyToKeepUp = player.currentItem?.isPlaybackLikelyToKeepUp ?? true
-
-        if isWaiting || !likelyToKeepUp {
-            isBuffering = true
-            bufferingMessage = makeBufferingMessage(
-                from: player.reasonForWaitingToPlay,
-                isLikelyToKeepUp: likelyToKeepUp
-            )
+        if lastKnownIsPlaying && !state.isPlaying {
+            saveProgress(force: true)
         } else {
+            saveProgress()
+        }
+
+        lastKnownIsPlaying = state.isPlaying
+    }
+
+    private func applyEvent(_ event: PlayerEvent) {
+        switch event {
+        case .didFinish:
+            Task { @MainActor in
+                await clearProgress()
+            }
+            isBuffering = false
+            bufferingMessage = nil
+        case .didFail(let error):
+            errorMessage = error.errorDescription
             isBuffering = false
             bufferingMessage = nil
         }
     }
 
-    private func makeBufferingMessage(
-        from reason: AVPlayer.WaitingReason?,
-        isLikelyToKeepUp: Bool
-    ) -> String {
-        if !isLikelyToKeepUp {
-            return "Carregando para continuar a reproducao..."
-        }
-
+    private func makeBufferingMessage(from reason: PlayerBufferingReason?) -> String {
         guard let reason else {
             return "Carregando..."
         }
 
         switch reason {
-        case .toMinimizeStalls:
+        case .insufficientBuffer:
+            return "Carregando para continuar a reproducao..."
+        case .minimizeStalls:
             return "Carregando para evitar interrupcoes..."
         case .evaluatingBufferingRate:
             return "Avaliando velocidade da conexao..."
-        case .noItemToPlay:
+        case .noItem:
             return "Preparando o episodio..."
-        default:
+        case .stalled:
+            return "Reproducao interrompida, tentando retomar..."
+        case .unknown:
             return "Carregando..."
         }
     }
@@ -525,170 +262,11 @@ final class PlayerViewModel {
         await manageProgressUseCase.clear(for: episode.playbackKey)
     }
 
-    private func updateNowPlayingInfo() {
-        guard player != nil else { return }
-
-        var info = nowPlayingInfoCenter.nowPlayingInfo ?? [:]
-        info[MPMediaItemPropertyTitle] = episode.title
-        info[MPMediaItemPropertyAlbumTitle] = podcastTitle
-
-        if duration > 0 && duration.isFinite {
-            info[MPMediaItemPropertyPlaybackDuration] = duration
-        }
-
-        info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = currentTime
-        info[MPNowPlayingInfoPropertyPlaybackRate] = isPlaying ? playbackRate : 0.0
-        info[MPNowPlayingInfoPropertyDefaultPlaybackRate] = playbackRate
-
-        nowPlayingInfoCenter.nowPlayingInfo = info
-        nowPlayingInfoCenter.playbackState = isPlaying ? .playing : .paused
-    }
-
-    private func clearNowPlayingInfo() {
-        nowPlayingInfoCenter.nowPlayingInfo = nil
-        nowPlayingInfoCenter.playbackState = .stopped
-    }
-
-    private func setupRemoteCommands() {
-        guard player != nil else { return }
-
-        remoteCommandCenter.playCommand.isEnabled = true
-        remoteCommandCenter.pauseCommand.isEnabled = true
-        remoteCommandCenter.togglePlayPauseCommand.isEnabled = true
-        remoteCommandCenter.changePlaybackPositionCommand.isEnabled = true
-        remoteCommandCenter.skipForwardCommand.isEnabled = true
-        remoteCommandCenter.skipBackwardCommand.isEnabled = true
-        remoteCommandCenter.changePlaybackRateCommand.isEnabled = true
-
-        remoteCommandCenter.skipForwardCommand.preferredIntervals = [NSNumber(value: skipForwardInterval)]
-        remoteCommandCenter.skipBackwardCommand.preferredIntervals = [NSNumber(value: skipBackwardInterval)]
-        remoteCommandCenter.changePlaybackRateCommand.supportedPlaybackRates = availablePlaybackRates
-            .map { NSNumber(value: $0) }
-
-        playCommandTarget = remoteCommandCenter.playCommand.addTarget { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.startPlayback()
-            }
-            return .success
-        }
-
-        pauseCommandTarget = remoteCommandCenter.pauseCommand.addTarget { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.pausePlayback()
-            }
-            return .success
-        }
-
-        toggleCommandTarget = remoteCommandCenter.togglePlayPauseCommand.addTarget { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.togglePlayback()
-            }
-            return .success
-        }
-
-        changePlaybackPositionTarget = remoteCommandCenter.changePlaybackPositionCommand.addTarget { [weak self] event in
-            guard let event = event as? MPChangePlaybackPositionCommandEvent else {
-                return .commandFailed
-            }
-            Task { @MainActor [weak self] in
-                self?.seek(to: event.positionTime)
-            }
-            return .success
-        }
-
-        skipForwardCommandTarget = remoteCommandCenter.skipForwardCommand.addTarget { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.skipForward()
-            }
-            return .success
-        }
-
-        skipBackwardCommandTarget = remoteCommandCenter.skipBackwardCommand.addTarget { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.skipBackward()
-            }
-            return .success
-        }
-
-        changePlaybackRateTarget = remoteCommandCenter.changePlaybackRateCommand.addTarget { [weak self] event in
-            guard let event = event as? MPChangePlaybackRateCommandEvent else {
-                return .commandFailed
-            }
-            Task { @MainActor [weak self] in
-                self?.setPlaybackRate(event.playbackRate)
-            }
-            return .success
-        }
-    }
-
-    private func teardownRemoteCommands() {
-        if let playCommandTarget {
-            remoteCommandCenter.playCommand.removeTarget(playCommandTarget)
-            self.playCommandTarget = nil
-        }
-        if let pauseCommandTarget {
-            remoteCommandCenter.pauseCommand.removeTarget(pauseCommandTarget)
-            self.pauseCommandTarget = nil
-        }
-        if let toggleCommandTarget {
-            remoteCommandCenter.togglePlayPauseCommand.removeTarget(toggleCommandTarget)
-            self.toggleCommandTarget = nil
-        }
-        if let changePlaybackPositionTarget {
-            remoteCommandCenter.changePlaybackPositionCommand.removeTarget(changePlaybackPositionTarget)
-            self.changePlaybackPositionTarget = nil
-        }
-        if let skipForwardCommandTarget {
-            remoteCommandCenter.skipForwardCommand.removeTarget(skipForwardCommandTarget)
-            self.skipForwardCommandTarget = nil
-        }
-        if let skipBackwardCommandTarget {
-            remoteCommandCenter.skipBackwardCommand.removeTarget(skipBackwardCommandTarget)
-            self.skipBackwardCommandTarget = nil
-        }
-        if let changePlaybackRateTarget {
-            remoteCommandCenter.changePlaybackRateCommand.removeTarget(changePlaybackRateTarget)
-            self.changePlaybackRateTarget = nil
-        }
-
-        remoteCommandCenter.playCommand.isEnabled = false
-        remoteCommandCenter.pauseCommand.isEnabled = false
-        remoteCommandCenter.togglePlayPauseCommand.isEnabled = false
-        remoteCommandCenter.changePlaybackPositionCommand.isEnabled = false
-        remoteCommandCenter.skipForwardCommand.isEnabled = false
-        remoteCommandCenter.skipBackwardCommand.isEnabled = false
-        remoteCommandCenter.changePlaybackRateCommand.isEnabled = false
-    }
-
-    private func startPlayback() {
-        guard player != nil else {
-            errorMessage = "Audio indisponivel para este episodio."
-            return
-        }
-        guard activateAudioSession() else { return }
-        player?.play()
-        player?.rate = playbackRate
-        isPlaying = true
-        updateNowPlayingInfo()
-    }
-
-    private func pausePlayback() {
-        player?.pause()
-        isPlaying = false
-        saveProgress(force: true)
-        updateNowPlayingInfo()
-    }
-
     private func seek(to time: TimeInterval) {
-        guard let player else { return }
-        let clamped = max(0, min(time, duration))
-        let target = CMTime(seconds: clamped, preferredTimescale: 600)
-        player.seek(to: target, toleranceBefore: .zero, toleranceAfter: .zero)
+        let maxDuration = duration > 0 && duration.isFinite ? duration : time
+        let clamped = max(0, min(time, maxDuration))
         currentTime = clamped
-        if isPlaying {
-            player.rate = playbackRate
-        }
-        updateNowPlayingInfo()
+        playerService.seek(to: clamped)
     }
 
     private func formatTime(_ seconds: TimeInterval) -> String {
@@ -709,10 +287,15 @@ final class PlayerViewModel {
 @MainActor
 final class PlayerCoordinator {
     private let manageProgressUseCase: ManagePlaybackProgressUseCase
+    private let playerService: AudioPlayerServiceProtocol
     private(set) var viewModel: PlayerViewModel?
 
-    init(manageProgressUseCase: ManagePlaybackProgressUseCase) {
+    init(
+        manageProgressUseCase: ManagePlaybackProgressUseCase,
+        playerService: AudioPlayerServiceProtocol
+    ) {
         self.manageProgressUseCase = manageProgressUseCase
+        self.playerService = playerService
     }
 
     func prepare(episode: Episode, podcastTitle: String) -> PlayerViewModel {
@@ -724,7 +307,8 @@ final class PlayerCoordinator {
         let nextViewModel = PlayerViewModel(
             episode: episode,
             podcastTitle: podcastTitle,
-            manageProgressUseCase: manageProgressUseCase
+            manageProgressUseCase: manageProgressUseCase,
+            playerService: playerService
         )
         viewModel = nextViewModel
         return nextViewModel
