@@ -68,8 +68,8 @@ struct EchocastApp: App {
 
     var body: some Scene {
         WindowGroup {
-            AddPodcastView(
-                viewModel: addPodcastViewModel
+            RootTabView(
+                addPodcastViewModel: addPodcastViewModel
             )
             .environment(playerCoordinator)
         }
