@@ -92,6 +92,10 @@ struct AddPodcastView: View {
 
 private extension AddPodcastView {
 
+    func inputBorderColor(hasError: Bool) -> Color {
+        hasError ? .red : Color.secondary.opacity(0.35)
+    }
+
     @ViewBuilder
     var headerView: some View {
         Text("URL do Podcast")
@@ -117,7 +121,7 @@ private extension AddPodcastView {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(viewModel.shouldShowError() ? Color.red : Color.white.opacity(0.2), lineWidth: 1)
+                    .stroke(inputBorderColor(hasError: viewModel.shouldShowError()), lineWidth: 1)
             )
             .shadow(color: Color.black.opacity(0.08), radius: 10, x: 0, y: 4)
 
@@ -145,7 +149,6 @@ private extension AddPodcastView {
             }
         }
         .controlSize(.regular)
-        .frame(width: 200, height: 48)
         .disabled(!viewModel.isValidURL(viewModel.inputText) || viewModel.isLoading)
         .buttonStyle(.borderedProminent)
         .frame(maxWidth: .infinity)
@@ -370,7 +373,7 @@ private extension AddPodcastView {
                     .textContentType(.URL)
                     .overlay(
                         RoundedRectangle(cornerRadius: 6)
-                            .stroke(viewModel.shouldShowError() ? Color.red : Color.clear, lineWidth: 1)
+                            .stroke(inputBorderColor(hasError: viewModel.shouldShowError()), lineWidth: 1)
                     )
 
                 if viewModel.shouldShowError(), let error = viewModel.validationError() {
@@ -432,7 +435,7 @@ private extension AddPodcastView {
                     .textContentType(.URL)
                     .overlay(
                         RoundedRectangle(cornerRadius: 6)
-                            .stroke(viewModel.shouldShowError() ? Color.red : Color.clear, lineWidth: 1)
+                            .stroke(inputBorderColor(hasError: viewModel.shouldShowError()), lineWidth: 1)
                     )
 
                 Button("Carregar") {}
