@@ -37,12 +37,16 @@ final class FavoritesViewModel {
         return isFavorite
     }
 
-    func remove(playbackKey: String, refreshAfterRemove: Bool = true) async {
-        await manageFavoritesUseCase.remove(playbackKey: playbackKey)
+    func remove(playbackKey: String) async {
+        await remove(playbackKeys: [playbackKey])
+    }
 
-        if refreshAfterRemove {
-            await refresh()
+    func remove(playbackKeys: [String]) async {
+        for playbackKey in playbackKeys {
+            await manageFavoritesUseCase.remove(playbackKey: playbackKey)
         }
+
+        await refresh()
     }
 
     func isFavorite(playbackKey: String) async -> Bool {
