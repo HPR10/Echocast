@@ -202,7 +202,8 @@ private extension PlayerView {
                 manageProgressUseCase: ManagePlaybackProgressUseCase(
                     repository: MockPlaybackProgressRepository()
                 ),
-                playerService: MockAudioPlayerService()
+                playerService: MockAudioPlayerService(),
+                resolvePlaybackSourceUseCase: nil
             )
         )
     }
@@ -220,7 +221,8 @@ private extension PlayerView {
                 manageProgressUseCase: ManagePlaybackProgressUseCase(
                     repository: MockPlaybackProgressRepository()
                 ),
-                playerService: MockAudioPlayerService()
+                playerService: MockAudioPlayerService(),
+                resolvePlaybackSourceUseCase: nil
             )
         )
     }

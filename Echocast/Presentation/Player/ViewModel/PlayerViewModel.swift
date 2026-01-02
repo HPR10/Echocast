@@ -15,6 +15,7 @@ final class PlayerViewModel {
     let podcastTitle: String
     private let manageProgressUseCase: ManagePlaybackProgressUseCase
     private let playerService: AudioPlayerServiceProtocol
+    private let resolvePlaybackSourceUseCase: ResolvePlaybackSourceUseCase?
     private var stateTask: Task<Void, Never>?
     private var eventTask: Task<Void, Never>?
     private var pendingResumeTime: TimeInterval?
@@ -37,6 +38,7 @@ final class PlayerViewModel {
     var duration: TimeInterval = 0
     var playbackRate: Float = 1.0
     private var isScrubbing = false
+    private var playbackURL: URL?
 
     var availablePlaybackRates: [Float] {
         [0.5, 0.75, 1.0, 1.25, 1.5, 2.0]
@@ -50,26 +52,27 @@ final class PlayerViewModel {
         episode: Episode,
         podcastTitle: String,
         manageProgressUseCase: ManagePlaybackProgressUseCase,
-        playerService: AudioPlayerServiceProtocol
+        playerService: AudioPlayerServiceProtocol,
+        resolvePlaybackSourceUseCase: ResolvePlaybackSourceUseCase?
     ) {
         self.episode = episode
         self.podcastTitle = podcastTitle
         self.manageProgressUseCase = manageProgressUseCase
         self.playerService = playerService
+        self.resolvePlaybackSourceUseCase = resolvePlaybackSourceUseCase
         if let feedDuration = episode.duration, feedDuration > 0 {
             self.duration = feedDuration
         }
 
-        playerService.load(episode: episode, podcastTitle: podcastTitle)
-        startObserving()
-
         Task { @MainActor in
+            await preparePlayback()
             await loadSavedProgress()
         }
+        startObserving()
     }
 
     var hasAudio: Bool {
-        episode.audioURL != nil
+        playbackURL != nil
     }
 
     var isSeekable: Bool {
@@ -267,6 +270,35 @@ final class PlayerViewModel {
         await manageProgressUseCase.clear(for: episode.playbackKey)
     }
 
+    private func preparePlayback() async {
+        let source: PlaybackSource
+        if let resolver = resolvePlaybackSourceUseCase {
+            do {
+                source = try await resolver.execute(for: episode)
+            } catch {
+                errorMessage = (error as? DownloadError)?.errorDescription ?? error.localizedDescription
+                return
+            }
+        } else if let url = episode.audioURL {
+            source = .remote(url)
+        } else {
+            errorMessage = DownloadError.missingAudioURL.errorDescription
+            return
+        }
+
+        playbackURL = source.url
+        let resolvedEpisode = Episode(
+            id: episode.id,
+            title: episode.title,
+            description: episode.description,
+            audioURL: playbackURL,
+            duration: episode.duration,
+            publishedAt: episode.publishedAt,
+            playbackKey: episode.playbackKey
+        )
+        playerService.load(episode: resolvedEpisode, podcastTitle: podcastTitle)
+    }
+
     private func updateBufferingUI(isBuffering: Bool, reason: PlayerBufferingReason?) {
         bufferingVisibilityTask?.cancel()
 
@@ -329,14 +361,17 @@ final class PlayerViewModel {
 final class PlayerCoordinator {
     private let manageProgressUseCase: ManagePlaybackProgressUseCase
     private let playerService: AudioPlayerServiceProtocol
+    private let resolvePlaybackSourceUseCase: ResolvePlaybackSourceUseCase?
     private(set) var viewModel: PlayerViewModel?
 
     init(
         manageProgressUseCase: ManagePlaybackProgressUseCase,
-        playerService: AudioPlayerServiceProtocol
+        playerService: AudioPlayerServiceProtocol,
+        resolvePlaybackSourceUseCase: ResolvePlaybackSourceUseCase?
     ) {
         self.manageProgressUseCase = manageProgressUseCase
         self.playerService = playerService
+        self.resolvePlaybackSourceUseCase = resolvePlaybackSourceUseCase
     }
 
     func prepare(episode: Episode, podcastTitle: String) -> PlayerViewModel {
@@ -349,7 +384,8 @@ final class PlayerCoordinator {
             episode: episode,
             podcastTitle: podcastTitle,
             manageProgressUseCase: manageProgressUseCase,
-            playerService: playerService
+            playerService: playerService,
+            resolvePlaybackSourceUseCase: resolvePlaybackSourceUseCase
         )
         viewModel = nextViewModel
         return nextViewModel

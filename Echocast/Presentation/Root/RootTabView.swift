@@ -9,9 +9,14 @@ import SwiftUI
 
 struct RootTabView: View {
     @State private var addPodcastViewModel: AddPodcastViewModel
+    @State private var downloadsViewModel: DownloadsViewModel
 
-    init(addPodcastViewModel: AddPodcastViewModel) {
+    init(
+        addPodcastViewModel: AddPodcastViewModel,
+        downloadsViewModel: DownloadsViewModel
+    ) {
         _addPodcastViewModel = State(initialValue: addPodcastViewModel)
+        _downloadsViewModel = State(initialValue: downloadsViewModel)
     }
 
     var body: some View {
@@ -24,6 +29,11 @@ struct RootTabView: View {
             FavoritesPlaceholderView()
                 .tabItem {
                     Label("Favoritos", systemImage: "star.fill")
+                }
+
+            DownloadsView(viewModel: downloadsViewModel)
+                .tabItem {
+                    Label("Baixados", systemImage: "tray.and.arrow.down.fill")
                 }
 
             ProfilePlaceholderView()
