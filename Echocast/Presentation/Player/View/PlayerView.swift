@@ -11,6 +11,7 @@ import Observation
 struct PlayerRouteView: View {
     @Environment(PlayerCoordinator.self) private var playerCoordinator
     @Environment(DownloadsViewModel.self) private var downloadsViewModel
+    @Environment(FavoritesViewModel.self) private var favoritesViewModel
     let episode: Episode
     let podcastTitle: String
 
@@ -21,7 +22,8 @@ struct PlayerRouteView: View {
         )
         PlayerView(
             viewModel: viewModel,
-            downloadsViewModel: downloadsViewModel
+            downloadsViewModel: downloadsViewModel,
+            favoritesViewModel: favoritesViewModel
         )
             .onDisappear {
                 playerCoordinator.handleViewDisappear(for: episode)
@@ -32,15 +34,20 @@ struct PlayerRouteView: View {
 struct PlayerView: View {
     let viewModel: PlayerViewModel
     let downloadsViewModel: DownloadsViewModel?
+    let favoritesViewModel: FavoritesViewModel?
     @State private var downloadError: String?
+    @State private var isFavorite = false
 
     init(
         viewModel: PlayerViewModel,
-        downloadsViewModel: DownloadsViewModel? = nil
+        downloadsViewModel: DownloadsViewModel? = nil,
+        favoritesViewModel: FavoritesViewModel? = nil
     ) {
         self.viewModel = viewModel
         self.downloadsViewModel = downloadsViewModel
+        self.favoritesViewModel = favoritesViewModel
         _downloadError = State(initialValue: nil)
+        _isFavorite = State(initialValue: false)
     }
 
     var body: some View {
@@ -64,6 +71,9 @@ struct PlayerView: View {
             Button("OK") { }
         } message: {
             Text(viewModel.errorMessage ?? downloadError ?? "")
+        }
+        .task {
+            await loadFavoriteState()
         }
     }
 }
@@ -136,6 +146,11 @@ private extension PlayerView {
     @ViewBuilder
     var headerSection: some View {
         VStack(spacing: 8) {
+            HStack {
+                Spacer()
+                favoriteButton
+            }
+
             Text(viewModel.podcastTitle)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
@@ -153,6 +168,30 @@ private extension PlayerView {
                     .multilineTextAlignment(.center)
             }
         }
+    }
+
+    private var favoriteButton: some View {
+        Button {
+            Task { @MainActor in
+                guard let favoritesViewModel else { return }
+                let newState = await favoritesViewModel.toggleFavorite(
+                    for: viewModel.episode,
+                    podcastTitle: viewModel.podcastTitle
+                )
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                    isFavorite = newState
+                }
+            }
+        } label: {
+            Image(systemName: isFavorite ? "star.fill" : "star")
+                .font(.title2.weight(.semibold))
+                .foregroundStyle(isFavorite ? Color.yellow : Color.secondary)
+                .scaleEffect(isFavorite ? 1.1 : 1.0)
+                .symbolEffect(.bounce, value: isFavorite)
+                .accessibilityLabel(isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos")
+        }
+        .buttonStyle(.plain)
+        .disabled(favoritesViewModel == nil)
     }
 
     @ViewBuilder
@@ -261,6 +300,13 @@ private extension PlayerView {
                     .foregroundStyle(.secondary)
             }
         }
+    }
+
+    func loadFavoriteState() async {
+        guard let favoritesViewModel else { return }
+        isFavorite = await favoritesViewModel.isFavorite(
+            playbackKey: viewModel.episode.playbackKey
+        )
     }
 }
 
