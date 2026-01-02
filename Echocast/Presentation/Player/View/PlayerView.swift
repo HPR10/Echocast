@@ -10,6 +10,7 @@ import Observation
 
 struct PlayerRouteView: View {
     @Environment(PlayerCoordinator.self) private var playerCoordinator
+    @Environment(DownloadsViewModel.self) private var downloadsViewModel
     let episode: Episode
     let podcastTitle: String
 
@@ -18,7 +19,10 @@ struct PlayerRouteView: View {
             episode: episode,
             podcastTitle: podcastTitle
         )
-        PlayerView(viewModel: viewModel)
+        PlayerView(
+            viewModel: viewModel,
+            downloadsViewModel: downloadsViewModel
+        )
             .onDisappear {
                 playerCoordinator.handleViewDisappear(for: episode)
             }
@@ -27,12 +31,24 @@ struct PlayerRouteView: View {
 
 struct PlayerView: View {
     let viewModel: PlayerViewModel
+    let downloadsViewModel: DownloadsViewModel?
+    @State private var downloadError: String?
+
+    init(
+        viewModel: PlayerViewModel,
+        downloadsViewModel: DownloadsViewModel? = nil
+    ) {
+        self.viewModel = viewModel
+        self.downloadsViewModel = downloadsViewModel
+        _downloadError = State(initialValue: nil)
+    }
 
     var body: some View {
         @Bindable var viewModel = viewModel
 
         VStack(spacing: 24) {
             headerSection
+            downloadSection
             progressSection
             controlSection
             playbackSection
@@ -42,12 +58,12 @@ struct PlayerView: View {
         .navigationTitle("Player")
         .navigationBarTitleDisplayMode(.inline)
         .alert("Erro", isPresented: .init(
-            get: { viewModel.errorMessage != nil },
-            set: { if !$0 { viewModel.errorMessage = nil } }
+            get: { viewModel.errorMessage != nil || downloadError != nil },
+            set: { if !$0 { viewModel.errorMessage = nil; downloadError = nil } }
         )) {
             Button("OK") { }
         } message: {
-            Text(viewModel.errorMessage ?? "")
+            Text(viewModel.errorMessage ?? downloadError ?? "")
         }
     }
 }
@@ -55,6 +71,67 @@ struct PlayerView: View {
 // MARK: - View Components
 
 private extension PlayerView {
+
+    @ViewBuilder
+    var downloadSection: some View {
+        if let downloadsViewModel {
+            let playbackKey = viewModel.episode.playbackKey
+            let activeDownload = downloadsViewModel.activeDownloads
+                .first { $0.playbackKey == playbackKey }
+            let isDownloaded = downloadsViewModel.downloads
+                .contains { $0.playbackKey == playbackKey }
+
+            VStack(spacing: 8) {
+                if let activeDownload {
+                    if let fraction = activeDownload.fractionCompleted {
+                        ProgressView(value: fraction)
+                    } else {
+                        ProgressView()
+                    }
+                    Text(downloadProgressLabel(for: activeDownload))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else if isDownloaded {
+                    Label("Baixado", systemImage: "checkmark.circle")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Button {
+                        Task { @MainActor in
+                            downloadError = await downloadsViewModel.enqueueDownload(
+                                for: viewModel.episode,
+                                podcastTitle: viewModel.podcastTitle
+                            )
+                        }
+                    } label: {
+                        Label("Baixar episodio", systemImage: "arrow.down.circle")
+                            .frame(minWidth: 160)
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(viewModel.episode.audioURL == nil)
+                }
+            }
+        }
+    }
+
+    func downloadProgressLabel(for progress: DownloadProgress) -> String {
+        switch progress.state {
+        case .queued:
+            return "Na fila"
+        case .running:
+            if let fraction = progress.fractionCompleted {
+                let percent = Int((fraction * 100).rounded())
+                return "Baixando... \(percent)%"
+            }
+            return "Baixando..."
+        case .finished:
+            return "Concluido"
+        case .failed(let message):
+            return "Falhou: \(message)"
+        case .cancelled:
+            return "Cancelado"
+        }
+    }
 
     @ViewBuilder
     var headerSection: some View {

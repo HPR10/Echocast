@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import CryptoKit
 
 struct DownloadedFileProvider: Sendable {
     let baseURL: URL
@@ -25,17 +26,16 @@ struct DownloadedFileProvider: Sendable {
                 ?? caches
                 ?? URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("Downloads", isDirectory: true)
         }
-        createDirectoryIfNeeded()
+        ensureDirectoryExists()
     }
 
     func localURL(for playbackKey: String, fileExtension: String?) -> URL {
-        let sanitizedKey = playbackKey
-            .replacingOccurrences(of: "/", with: "_")
-            .replacingOccurrences(of: ":", with: "_")
+        ensureDirectoryExists()
+        let fileName = Self.safeFileName(for: playbackKey)
         if let fileExtension, !fileExtension.isEmpty {
-            return baseURL.appendingPathComponent("\(sanitizedKey).\(fileExtension)")
+            return baseURL.appendingPathComponent("\(fileName).\(fileExtension)")
         }
-        return baseURL.appendingPathComponent(sanitizedKey)
+        return baseURL.appendingPathComponent(fileName)
     }
 
     func removeFile(at url: URL) {
@@ -69,13 +69,16 @@ struct DownloadedFileProvider: Sendable {
         try? mutableURL.setResourceValues(values)
     }
 
-    // MARK: - Private
-
-    private func createDirectoryIfNeeded() {
+    func ensureDirectoryExists() {
         let fm = FileManager.default
         if !fm.fileExists(atPath: baseURL.path) {
             try? fm.createDirectory(at: baseURL, withIntermediateDirectories: true)
         }
         excludeFromBackup(at: baseURL)
+    }
+
+    private static func safeFileName(for playbackKey: String) -> String {
+        let digest = SHA256.hash(data: Data(playbackKey.utf8))
+        return digest.map { String(format: "%02x", $0) }.joined()
     }
 }

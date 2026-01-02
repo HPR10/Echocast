@@ -34,10 +34,10 @@ final class DownloadsViewModel {
         self.deleteUseCase = deleteUseCase
         self.enqueueUseCase = enqueueUseCase
 
+        startObserving()
         Task { @MainActor in
             await refresh()
             await loadActiveDownloads()
-            startObserving()
         }
     }
 
@@ -67,6 +67,7 @@ final class DownloadsViewModel {
             inflightMetadata[episode.playbackKey] = (title: episode.title, podcastTitle: podcastTitle)
             try await enqueueUseCase.execute(request)
             errorMessage = nil
+            await loadActiveDownloads()
             return nil
         } catch {
             inflightMetadata[episode.playbackKey] = nil
@@ -107,9 +108,19 @@ final class DownloadsViewModel {
                 switch progress.state {
                 case .queued, .running:
                     activeDownloads.append(progress)
-                case .finished, .failed, .cancelled:
+                case .finished:
                     inflightMetadata[progress.playbackKey] = nil
                     await refresh()
+                    await loadActiveDownloads()
+                case .failed(let message):
+                    inflightMetadata[progress.playbackKey] = nil
+                    errorMessage = message
+                    await refresh()
+                    await loadActiveDownloads()
+                case .cancelled:
+                    inflightMetadata[progress.playbackKey] = nil
+                    await refresh()
+                    await loadActiveDownloads()
                 }
             }
         }

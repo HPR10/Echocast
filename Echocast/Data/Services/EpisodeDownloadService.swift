@@ -160,11 +160,39 @@ final class EpisodeDownloadService: NSObject, EpisodeDownloadServiceProtocol {
         from location: URL,
         to targetURL: URL
     ) -> Result<Int64, DownloadError> {
-        try? FileManager.default.removeItem(at: targetURL)
+        let fileManager = FileManager.default
+
+        guard fileManager.fileExists(atPath: location.path) else {
+            return .failure(.failed("Arquivo temporario do download ausente."))
+        }
+
+        defer { try? fileManager.removeItem(at: location) }
+
         do {
-            try FileManager.default.moveItem(at: location, to: targetURL)
+            try fileManager.createDirectory(
+                at: targetURL.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
         } catch {
-            return .failure(.failed("Falha ao salvar arquivo local."))
+            return .failure(.failed("Falha ao preparar pasta de downloads: \(error.localizedDescription)"))
+        }
+
+        do {
+            if fileManager.fileExists(atPath: targetURL.path) {
+                try fileManager.removeItem(at: targetURL)
+            }
+            try fileManager.copyItem(at: location, to: targetURL)
+        } catch {
+            do {
+                let data = try Data(contentsOf: location)
+                try data.write(to: targetURL, options: .atomic)
+            } catch let writeError {
+                return .failure(.failed("Falha ao salvar arquivo local: \(writeError.localizedDescription)"))
+            }
+        }
+
+        if !fileManager.fileExists(atPath: targetURL.path) {
+            return .failure(.failed("Falha ao salvar arquivo local: arquivo final ausente."))
         }
 
         var values = URLResourceValues()
@@ -181,6 +209,16 @@ final class EpisodeDownloadService: NSObject, EpisodeDownloadServiceProtocol {
         }
 
         return .success(fileSize)
+    }
+
+    private nonisolated static func makeStagingURL(for location: URL) -> URL {
+        let tempDir = FileManager.default.temporaryDirectory
+        let fileName = UUID().uuidString
+        let pathExtension = location.pathExtension
+        if !pathExtension.isEmpty {
+            return tempDir.appendingPathComponent(fileName).appendingPathExtension(pathExtension)
+        }
+        return tempDir.appendingPathComponent(fileName)
     }
 }
 
@@ -216,19 +254,38 @@ extension EpisodeDownloadService: URLSessionDownloadDelegate {
         downloadTask: URLSessionDownloadTask,
         didFinishDownloadingTo location: URL
     ) {
+        let stagingURL = Self.makeStagingURL(for: location)
+        let fileManager = FileManager.default
+        do {
+            if fileManager.fileExists(atPath: stagingURL.path) {
+                try fileManager.removeItem(at: stagingURL)
+            }
+            try fileManager.copyItem(at: location, to: stagingURL)
+        } catch {
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                finishCurrent(with: .failed("Falha ao salvar arquivo local: \(error.localizedDescription)"))
+            }
+            return
+        }
+
         Task { @MainActor [weak self] in
             guard let self else { return }
-            guard let request = currentRequest else { return }
+            guard let request = currentRequest else {
+                try? FileManager.default.removeItem(at: stagingURL)
+                return
+            }
             let playbackKey = request.episode.playbackKey
 
             let fileExtension = request.episode.audioURL?.pathExtension
+            fileProvider.ensureDirectoryExists()
             let targetURL = fileProvider.localURL(
                 for: playbackKey,
                 fileExtension: fileExtension
             )
             let moveResult = await Task.detached(priority: .utility) {
                 Self.moveDownloadedFile(
-                    from: location,
+                    from: stagingURL,
                     to: targetURL
                 )
             }.value
