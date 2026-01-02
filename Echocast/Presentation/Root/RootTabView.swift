@@ -10,13 +10,16 @@ import SwiftUI
 struct RootTabView: View {
     @State private var addPodcastViewModel: AddPodcastViewModel
     @State private var downloadsViewModel: DownloadsViewModel
+    @State private var favoritesViewModel: FavoritesViewModel
 
     init(
         addPodcastViewModel: AddPodcastViewModel,
-        downloadsViewModel: DownloadsViewModel
+        downloadsViewModel: DownloadsViewModel,
+        favoritesViewModel: FavoritesViewModel
     ) {
         _addPodcastViewModel = State(initialValue: addPodcastViewModel)
         _downloadsViewModel = State(initialValue: downloadsViewModel)
+        _favoritesViewModel = State(initialValue: favoritesViewModel)
     }
 
     var body: some View {
@@ -26,7 +29,7 @@ struct RootTabView: View {
                     Label("Início", systemImage: "house.fill")
                 }
 
-            FavoritesPlaceholderView()
+            FavoritesView(viewModel: favoritesViewModel)
                 .tabItem {
                     Label("Favoritos", systemImage: "star.fill")
                 }
@@ -40,19 +43,6 @@ struct RootTabView: View {
                 .tabItem {
                     Label("Perfil", systemImage: "person.crop.circle")
                 }
-        }
-    }
-}
-
-private struct FavoritesPlaceholderView: View {
-    var body: some View {
-        NavigationStack {
-            ContentUnavailableView(
-                "Favoritos",
-                systemImage: "star.fill",
-                description: Text("Adicione episódios aos favoritos para vê-los aqui.")
-            )
-            .navigationTitle("Favoritos")
         }
     }
 }

@@ -16,6 +16,7 @@ struct EchocastApp: App {
     let audioPlayerService: AudioPlayerService
     let playerCoordinator: PlayerCoordinator
     let downloadsViewModel: DownloadsViewModel
+    let favoritesViewModel: FavoritesViewModel
 
     init() {
         do {
@@ -23,7 +24,8 @@ struct EchocastApp: App {
                 for: FeedHistoryItem.self,
                 PodcastEntity.self,
                 EpisodeEntity.self,
-                DownloadedEpisodeEntity.self
+                DownloadedEpisodeEntity.self,
+                FavoriteEpisodeEntity.self
             )
             let feedService = FeedService()
             let imageCacheService = ImageCacheService()
@@ -66,11 +68,19 @@ struct EchocastApp: App {
             let resolvePlaybackSourceUseCase = ResolvePlaybackSourceUseCase(
                 repository: downloadedEpisodesRepository
             )
+            let manageFavoriteEpisodesUseCase = ManageFavoriteEpisodesUseCase(
+                repository: FavoriteEpisodesRepository(
+                    modelContext: container.mainContext
+                )
+            )
             downloadsViewModel = DownloadsViewModel(
                 listUseCase: listDownloadedEpisodesUseCase,
                 observeProgressUseCase: observeDownloadProgressUseCase,
                 deleteUseCase: deleteDownloadedEpisodeUseCase,
                 enqueueUseCase: enqueueDownloadUseCase
+            )
+            favoritesViewModel = FavoritesViewModel(
+                manageFavoritesUseCase: manageFavoriteEpisodesUseCase
             )
             let audioPlayerService = AudioPlayerService()
             addPodcastViewModel = AddPodcastViewModel(
@@ -106,10 +116,12 @@ struct EchocastApp: App {
         WindowGroup {
             RootTabView(
                 addPodcastViewModel: addPodcastViewModel,
-                downloadsViewModel: downloadsViewModel
+                downloadsViewModel: downloadsViewModel,
+                favoritesViewModel: favoritesViewModel
             )
             .environment(playerCoordinator)
             .environment(downloadsViewModel)
+            .environment(favoritesViewModel)
         }
         .modelContainer(container)
     }
