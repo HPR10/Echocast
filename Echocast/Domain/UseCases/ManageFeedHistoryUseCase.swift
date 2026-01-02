@@ -28,4 +28,10 @@ final class ManageFeedHistoryUseCase {
 
         await repository.deleteOldestExceeding(limit: maxItems)
     }
+
+    func removeURL(_ url: String) async {
+        guard !url.isEmpty else { return }
+
+        await repository.deleteByURL(url)
+    }
 }
