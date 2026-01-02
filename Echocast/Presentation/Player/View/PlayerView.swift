@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Observation
+import UIKit
 
 struct PlayerRouteView: View {
     @Environment(PlayerCoordinator.self) private var playerCoordinator
@@ -14,6 +15,7 @@ struct PlayerRouteView: View {
     @Environment(FavoritesViewModel.self) private var favoritesViewModel
     let episode: Episode
     let podcastTitle: String
+    let podcastImageURL: URL?
 
     var body: some View {
         let viewModel = playerCoordinator.prepare(
@@ -23,7 +25,8 @@ struct PlayerRouteView: View {
         PlayerView(
             viewModel: viewModel,
             downloadsViewModel: downloadsViewModel,
-            favoritesViewModel: favoritesViewModel
+            favoritesViewModel: favoritesViewModel,
+            podcastImageURL: podcastImageURL
         )
             .onDisappear {
                 playerCoordinator.handleViewDisappear(for: episode)
@@ -35,17 +38,20 @@ struct PlayerView: View {
     let viewModel: PlayerViewModel
     let downloadsViewModel: DownloadsViewModel?
     let favoritesViewModel: FavoritesViewModel?
+    let podcastImageURL: URL?
     @State private var downloadError: String?
     @State private var isFavorite = false
 
     init(
         viewModel: PlayerViewModel,
         downloadsViewModel: DownloadsViewModel? = nil,
-        favoritesViewModel: FavoritesViewModel? = nil
+        favoritesViewModel: FavoritesViewModel? = nil,
+        podcastImageURL: URL? = nil
     ) {
         self.viewModel = viewModel
         self.downloadsViewModel = downloadsViewModel
         self.favoritesViewModel = favoritesViewModel
+        self.podcastImageURL = podcastImageURL
         _downloadError = State(initialValue: nil)
         _isFavorite = State(initialValue: false)
     }
@@ -54,6 +60,7 @@ struct PlayerView: View {
         @Bindable var viewModel = viewModel
 
         VStack(spacing: 24) {
+            podcastBanner
             headerSection
             downloadSection
             progressSection
@@ -81,6 +88,46 @@ struct PlayerView: View {
 // MARK: - View Components
 
 private extension PlayerView {
+
+    private var bannerHeight: CGFloat {
+        UIScreen.main.bounds.height * 0.35
+    }
+
+    @ViewBuilder
+    var podcastBanner: some View {
+        Group {
+            if let podcastImageURL {
+                AsyncImage(url: podcastImageURL) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    case .failure:
+                        placeholderBanner
+                    case .empty:
+                        ProgressView()
+                    @unknown default:
+                        placeholderBanner
+                    }
+                }
+            } else {
+                placeholderBanner
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: bannerHeight)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    private var placeholderBanner: some View {
+        LinearGradient(colors: [.purple.opacity(0.6), .blue.opacity(0.6)], startPoint: .topLeading, endPoint: .bottomTrailing)
+            .overlay {
+                Image(systemName: "mic.fill")
+                    .font(.system(size: 60, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.9))
+            }
+    }
 
     @ViewBuilder
     var downloadSection: some View {
@@ -327,7 +374,8 @@ private extension PlayerView {
                 ),
                 playerService: MockAudioPlayerService(),
                 resolvePlaybackSourceUseCase: nil
-            )
+            ),
+            podcastImageURL: URL(string: "https://example.com/image.jpg")
         )
     }
 }
