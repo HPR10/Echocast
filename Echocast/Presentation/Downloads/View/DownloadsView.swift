@@ -36,17 +36,28 @@ struct DownloadsView: View {
                         .listRowBackground(Color.clear)
                     } else {
                         ForEach(viewModel.downloads) { item in
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text(item.title)
-                                    .font(.headline)
-                                    .lineLimit(2)
-                                Text(item.podcastTitle)
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                                    .lineLimit(1)
-                                Text(formatFileSize(item.fileSize))
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                            NavigationLink {
+                                PlayerRouteView(
+                                    episode: Episode(
+                                        title: item.title,
+                                        audioURL: item.audioURL,
+                                        playbackKey: item.playbackKey
+                                    ),
+                                    podcastTitle: item.podcastTitle
+                                )
+                            } label: {
+                                VStack(alignment: .leading, spacing: 6) {
+                                    Text(item.title)
+                                        .font(.headline)
+                                        .lineLimit(2)
+                                    Text(item.podcastTitle)
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(1)
+                                    Text(formatFileSize(item.fileSize))
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
                             }
                         }
                         .onDelete { indexSet in
