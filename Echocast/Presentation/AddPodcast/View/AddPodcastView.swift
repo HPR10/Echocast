@@ -185,6 +185,15 @@ private extension AddPodcastView {
                             }
                         }
                         .buttonStyle(.plain)
+                        .swipeActions(edge: .trailing) {
+                            Button(role: .destructive) {
+                                Task {
+                                    await viewModel.removeFromHistory(url: item.url)
+                                }
+                            } label: {
+                                Label("Excluir", systemImage: "trash")
+                            }
+                        }
                     }
                 }
             }

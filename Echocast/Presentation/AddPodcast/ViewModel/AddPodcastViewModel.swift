@@ -61,6 +61,10 @@ final class AddPodcastViewModel {
         await clearImageCacheUseCase.execute()
     }
 
+    func removeFromHistory(url: String) async {
+        await manageHistoryUseCase.removeURL(url)
+    }
+
     // MARK: - Validation
 
     func isValidURL(_ url: String) -> Bool {
