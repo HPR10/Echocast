@@ -88,13 +88,13 @@ struct AddPodcastView: View {
     }
 }
 
+private func inputBorderColor(hasError: Bool) -> Color {
+    hasError ? .red : Color.secondary.opacity(0.35)
+}
+
 // MARK: - View Components
 
 private extension AddPodcastView {
-
-    func inputBorderColor(hasError: Bool) -> Color {
-        hasError ? .red : Color.secondary.opacity(0.35)
-    }
 
     @ViewBuilder
     var headerView: some View {
@@ -366,15 +366,21 @@ private extension AddPodcastView {
                     .fontWeight(.bold)
 
                 TextField("URL do RSS", text: $viewModel.inputText)
-                    .textFieldStyle(.roundedBorder)
                     .keyboardType(.URL)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled(true)
                     .textContentType(.URL)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 16)
+                    .background(
+                        .ultraThinMaterial,
+                        in: RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    )
                     .overlay(
-                        RoundedRectangle(cornerRadius: 6)
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
                             .stroke(inputBorderColor(hasError: viewModel.shouldShowError()), lineWidth: 1)
                     )
+                    .shadow(color: Color.black.opacity(0.08), radius: 10, x: 0, y: 4)
 
                 if viewModel.shouldShowError(), let error = viewModel.validationError() {
                     Text(error)
@@ -382,9 +388,22 @@ private extension AddPodcastView {
                         .foregroundStyle(.red)
                 }
 
-                Button("Carregar") {}
-                    .disabled(!viewModel.isValidURL(viewModel.inputText))
-                    .buttonStyle(.borderedProminent)
+                Button {
+
+                } label: {
+                    HStack(spacing: 8) {
+                        Text("Carregar")
+                            .font(.headline.weight(.semibold))
+                        Image(systemName: "arrow.right.circle.fill")
+                            .imageScale(.medium)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                }
+                .controlSize(.regular)
+                .disabled(!viewModel.isValidURL(viewModel.inputText))
+                .buttonStyle(.borderedProminent)
+                .frame(maxWidth: .infinity)
 
                 Spacer()
             }
@@ -428,19 +447,38 @@ private extension AddPodcastView {
                     .fontWeight(.bold)
 
                 TextField("URL do RSS", text: $viewModel.inputText)
-                    .textFieldStyle(.roundedBorder)
                     .keyboardType(.URL)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled(true)
                     .textContentType(.URL)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 16)
+                    .background(
+                        .ultraThinMaterial,
+                        in: RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    )
                     .overlay(
-                        RoundedRectangle(cornerRadius: 6)
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
                             .stroke(inputBorderColor(hasError: viewModel.shouldShowError()), lineWidth: 1)
                     )
+                    .shadow(color: Color.black.opacity(0.08), radius: 10, x: 0, y: 4)
 
-                Button("Carregar") {}
-                    .disabled(!viewModel.isValidURL(viewModel.inputText))
-                    .buttonStyle(.borderedProminent)
+                Button {
+
+                } label: {
+                    HStack(spacing: 8) {
+                        Text("Carregar")
+                            .font(.headline.weight(.semibold))
+                        Image(systemName: "arrow.right.circle.fill")
+                            .imageScale(.medium)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                }
+                .controlSize(.regular)
+                .disabled(!viewModel.isValidURL(viewModel.inputText))
+                .buttonStyle(.borderedProminent)
+                .frame(maxWidth: .infinity)
 
                 Spacer()
             }
