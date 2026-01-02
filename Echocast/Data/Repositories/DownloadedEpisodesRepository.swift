@@ -26,12 +26,12 @@ final class DownloadedEpisodesRepository: DownloadedEpisodesRepositoryProtocol {
 
     func fetch(playbackKey: String) async -> DownloadedEpisode? {
         guard let entity = fetchEntity(playbackKey: playbackKey) else { return nil }
-        guard fileProvider.fileExists(at: URL(fileURLWithPath: entity.localFilePath)) else {
+        guard let localURL = resolveLocalURL(for: entity) else {
             modelContext.delete(entity)
             saveContext(action: "deleteMissingDownload")
             return nil
         }
-        return map(entity)
+        return map(entity, localFileURL: localURL)
     }
 
     func fetchAll() async -> [DownloadedEpisode] {
@@ -42,8 +42,22 @@ final class DownloadedEpisodesRepository: DownloadedEpisodesRepositoryProtocol {
             ]
         )
         let items = (try? modelContext.fetch(descriptor)) ?? []
-        let validItems = filterValidEntities(from: items, action: "deleteMissingDownloads")
-        return validItems.map(map)
+        var removedAny = false
+
+        let mapped: [DownloadedEpisode] = items.compactMap { entity in
+            guard let localURL = resolveLocalURL(for: entity) else {
+                modelContext.delete(entity)
+                removedAny = true
+                return nil
+            }
+            return map(entity, localFileURL: localURL)
+        }
+
+        if removedAny {
+            saveContext(action: "deleteMissingDownloads")
+        }
+
+        return mapped
     }
 
     func save(_ episode: DownloadedEpisode) async {
@@ -84,8 +98,23 @@ final class DownloadedEpisodesRepository: DownloadedEpisodesRepositoryProtocol {
     func totalSizeInBytes() async -> Int64 {
         let descriptor = FetchDescriptor<DownloadedEpisodeEntity>()
         let items = (try? modelContext.fetch(descriptor)) ?? []
-        let validItems = filterValidEntities(from: items, action: "deleteMissingDownloads")
-        return validItems.reduce(0) { $0 + $1.fileSize }
+        var removedAny = false
+        var total: Int64 = 0
+
+        for item in items {
+            guard let localURL = resolveLocalURL(for: item) else {
+                modelContext.delete(item)
+                removedAny = true
+                continue
+            }
+            total += fileProvider.fileSize(at: localURL) ?? item.fileSize
+        }
+
+        if removedAny {
+            saveContext(action: "deleteMissingDownloads")
+        }
+
+        return total
     }
 
     // MARK: - Private
@@ -121,40 +150,48 @@ final class DownloadedEpisodesRepository: DownloadedEpisodesRepositoryProtocol {
         entity.expiresAt = model.expiresAt
     }
 
-    private func map(_ entity: DownloadedEpisodeEntity) -> DownloadedEpisode {
+    private func map(
+        _ entity: DownloadedEpisodeEntity,
+        localFileURL: URL
+    ) -> DownloadedEpisode {
         DownloadedEpisode(
             playbackKey: entity.playbackKey,
             title: entity.title,
             podcastTitle: entity.podcastTitle,
             audioURL: URL(string: entity.audioURL) ?? URL(fileURLWithPath: entity.audioURL),
-            localFileURL: URL(fileURLWithPath: entity.localFilePath),
+            localFileURL: localFileURL,
             fileSize: entity.fileSize,
             downloadedAt: entity.downloadedAt,
             expiresAt: entity.expiresAt
         )
     }
 
-    private func filterValidEntities(
-        from items: [DownloadedEpisodeEntity],
-        action: String
-    ) -> [DownloadedEpisodeEntity] {
-        var validItems: [DownloadedEpisodeEntity] = []
-        var removedAny = false
+    private func resolveLocalURL(for entity: DownloadedEpisodeEntity) -> URL? {
+        let storedURL = URL(fileURLWithPath: entity.localFilePath)
+        if fileProvider.fileExists(at: storedURL) {
+            return storedURL
+        }
 
-        for item in items {
-            if fileProvider.fileExists(at: URL(fileURLWithPath: item.localFilePath)) {
-                validItems.append(item)
-            } else {
-                modelContext.delete(item)
-                removedAny = true
+        let extensionFromStored = storedURL.pathExtension
+        let extensionFromRemote = URL(string: entity.audioURL)?.pathExtension
+        let resolvedExtension = [extensionFromStored, extensionFromRemote]
+            .compactMap { $0 }
+            .first { !$0.isEmpty }
+
+        let expectedURL = fileProvider.localURL(
+            for: entity.playbackKey,
+            fileExtension: resolvedExtension
+        )
+
+        if fileProvider.fileExists(at: expectedURL) {
+            if expectedURL.path != entity.localFilePath {
+                entity.localFilePath = expectedURL.path
+                saveContext(action: "updateLocalFilePath")
             }
+            return expectedURL
         }
 
-        if removedAny {
-            saveContext(action: action)
-        }
-
-        return validItems
+        return nil
     }
 
     private func saveContext(action: String) {

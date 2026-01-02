@@ -16,13 +16,11 @@ struct DownloadedFileProvider: Sendable {
             self.baseURL = baseURL
         } else {
             let fm = FileManager.default
-            let support = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
-            let supportCache = support?
-                .appendingPathComponent("Caches", isDirectory: true)
+            let support = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?
                 .appendingPathComponent("Downloads", isDirectory: true)
             let caches = fm.urls(for: .cachesDirectory, in: .userDomainMask).first?
                 .appendingPathComponent("Downloads", isDirectory: true)
-            self.baseURL = supportCache
+            self.baseURL = support
                 ?? caches
                 ?? URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("Downloads", isDirectory: true)
         }

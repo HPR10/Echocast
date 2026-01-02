@@ -12,7 +12,6 @@ final class EpisodeDownloadService: NSObject, EpisodeDownloadServiceProtocol {
     private let repository: DownloadedEpisodesRepositoryProtocol
     private let fileProvider: DownloadedFileProvider
     private let maxCacheSizeInBytes: Int64
-    private let timeToLive: TimeInterval
     private lazy var session: URLSession = {
         let configuration = URLSessionConfiguration.default
         configuration.allowsCellularAccess = true
@@ -33,13 +32,11 @@ final class EpisodeDownloadService: NSObject, EpisodeDownloadServiceProtocol {
     init(
         repository: DownloadedEpisodesRepositoryProtocol,
         fileProvider: DownloadedFileProvider,
-        maxCacheSizeInBytes: Int64 = 1_000_000_000,
-        timeToLive: TimeInterval = 30 * 24 * 60 * 60
+        maxCacheSizeInBytes: Int64 = 1_000_000_000
     ) {
         self.repository = repository
         self.fileProvider = fileProvider
         self.maxCacheSizeInBytes = maxCacheSizeInBytes
-        self.timeToLive = timeToLive
     }
 
     func enqueue(_ request: EpisodeDownloadRequest) async throws {
@@ -311,7 +308,6 @@ extension EpisodeDownloadService: URLSessionDownloadDelegate {
                 return
             }
 
-            let expiresAt = Date().addingTimeInterval(timeToLive)
             let downloaded = DownloadedEpisode(
                 playbackKey: playbackKey,
                 title: request.episode.title,
@@ -320,7 +316,7 @@ extension EpisodeDownloadService: URLSessionDownloadDelegate {
                 localFileURL: targetURL,
                 fileSize: fileSize,
                 downloadedAt: .now,
-                expiresAt: expiresAt
+                expiresAt: nil
             )
             await repository.save(downloaded)
             finishCurrent(

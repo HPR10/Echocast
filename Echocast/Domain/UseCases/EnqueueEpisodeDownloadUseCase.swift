@@ -12,18 +12,15 @@ final class EnqueueEpisodeDownloadUseCase {
     private let downloadService: EpisodeDownloadServiceProtocol
     private let repository: DownloadedEpisodesRepositoryProtocol
     private let maxCacheSizeInBytes: Int64
-    private let timeToLive: TimeInterval
 
     init(
         downloadService: EpisodeDownloadServiceProtocol,
         repository: DownloadedEpisodesRepositoryProtocol,
-        maxCacheSizeInBytes: Int64 = 1_000_000_000,
-        timeToLive: TimeInterval = 30 * 24 * 60 * 60
+        maxCacheSizeInBytes: Int64 = 1_000_000_000
     ) {
         self.downloadService = downloadService
         self.repository = repository
         self.maxCacheSizeInBytes = maxCacheSizeInBytes
-        self.timeToLive = timeToLive
     }
 
     func execute(_ request: EpisodeDownloadRequest) async throws {
@@ -31,15 +28,8 @@ final class EnqueueEpisodeDownloadUseCase {
             throw DownloadError.missingAudioURL
         }
 
-        let now = Date()
-        await repository.deleteExpired(before: now)
-
         if let existing = await repository.fetch(playbackKey: request.episode.playbackKey) {
-            if existing.isExpired(referenceDate: now, ttl: timeToLive) {
-                await repository.delete(playbackKey: existing.playbackKey)
-            } else {
-                throw DownloadError.alreadyDownloaded
-            }
+            throw DownloadError.alreadyDownloaded
         }
 
         if let active = (await downloadService.activeDownloads())
