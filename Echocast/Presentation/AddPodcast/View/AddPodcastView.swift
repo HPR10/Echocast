@@ -94,8 +94,7 @@ private func inputBorderColor(hasError: Bool) -> Color {
 
 // MARK: - View Components
 
-private extension AddPodcastView {
-
+extension AddPodcastView {
     @ViewBuilder
     var headerView: some View {
         Text("URL do Podcast")

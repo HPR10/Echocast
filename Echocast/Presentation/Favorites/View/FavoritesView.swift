@@ -27,7 +27,7 @@ struct FavoritesView: View {
                     )
                 } else {
                     List {
-                        ForEach(viewModel.favorites) { favorite in
+                        ForEach(viewModel.favorites, id: \.id) { favorite in
                             NavigationLink {
                                 PlayerRouteView(
                                     episode: favorite.episode,
@@ -39,9 +39,9 @@ struct FavoritesView: View {
                         }
                         .onDelete { indexSet in
                             let favoritesSnapshot = viewModel.favorites
-                            let playbackKeys = indexSet.compactMap { index in
+                            let playbackKeys: [String] = indexSet.compactMap { (index) -> String? in
                                 guard favoritesSnapshot.indices.contains(index) else { return nil }
-                                return favoritesSnapshot[index].playbackKey
+                                return favoritesSnapshot[index].playbackKey as String?
                             }
 
                             Task { @MainActor in
