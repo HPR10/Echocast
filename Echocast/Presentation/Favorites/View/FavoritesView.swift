@@ -39,10 +39,16 @@ struct FavoritesView: View {
                         }
                         .onDelete { indexSet in
                             Task { @MainActor in
-                                for index in indexSet {
-                                    let favorite = viewModel.favorites[index]
-                                    await viewModel.remove(playbackKey: favorite.playbackKey)
+                                let favoritesToRemove = indexSet.map { viewModel.favorites[$0] }
+
+                                for favorite in favoritesToRemove {
+                                    await viewModel.remove(
+                                        playbackKey: favorite.playbackKey,
+                                        refreshAfterRemove: false
+                                    )
                                 }
+
+                                await viewModel.refresh()
                             }
                         }
                     }
