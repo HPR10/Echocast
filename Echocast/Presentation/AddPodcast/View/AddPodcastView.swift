@@ -90,9 +90,9 @@ struct AddPodcastView: View {
 
 // MARK: - View Components
 
-private extension AddPodcastView {
+extension AddPodcastView {
 
-    func inputBorderColor(hasError: Bool) -> Color {
+    static func inputBorderColor(hasError: Bool) -> Color {
         hasError ? .red : Color.secondary.opacity(0.35)
     }
 
@@ -121,7 +121,7 @@ private extension AddPodcastView {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(inputBorderColor(hasError: viewModel.shouldShowError()), lineWidth: 1)
+                    .stroke(AddPodcastView.inputBorderColor(hasError: viewModel.shouldShowError()), lineWidth: 1)
             )
             .shadow(color: Color.black.opacity(0.08), radius: 10, x: 0, y: 4)
 
@@ -382,7 +382,7 @@ private extension AddPodcastView {
                     .textContentType(.URL)
                     .overlay(
                         RoundedRectangle(cornerRadius: 6)
-                            .stroke(inputBorderColor(hasError: viewModel.shouldShowError()), lineWidth: 1)
+                            .stroke(AddPodcastView.inputBorderColor(hasError: viewModel.shouldShowError()), lineWidth: 1)
                     )
 
                 if viewModel.shouldShowError(), let error = viewModel.validationError() {
@@ -444,7 +444,7 @@ private extension AddPodcastView {
                     .textContentType(.URL)
                     .overlay(
                         RoundedRectangle(cornerRadius: 6)
-                            .stroke(inputBorderColor(hasError: viewModel.shouldShowError()), lineWidth: 1)
+                            .stroke(AddPodcastView.inputBorderColor(hasError: viewModel.shouldShowError()), lineWidth: 1)
                     )
 
                 Button("Carregar") {}
@@ -524,3 +524,4 @@ private extension AddPodcastView {
         )
     )
 }
+
