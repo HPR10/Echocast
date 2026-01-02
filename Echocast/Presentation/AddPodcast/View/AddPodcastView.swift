@@ -14,6 +14,7 @@ struct AddPodcastView: View {
     @State private var navigationPath = NavigationPath()
     @State private var showClearCacheConfirmation = false
     @Query(sort: \FeedHistoryItem.addedAt, order: .reverse) private var feedHistory: [FeedHistoryItem]
+    @Query private var podcasts: [PodcastEntity]
 
     init(viewModel: AddPodcastViewModel) {
         _viewModel = State(initialValue: viewModel)
@@ -103,16 +104,22 @@ private extension AddPodcastView {
         @Bindable var viewModel = viewModel
 
         TextField("URL do RSS", text: $viewModel.inputText)
-            .textFieldStyle(.roundedBorder)
             .keyboardType(.URL)
             .textInputAutocapitalization(.never)
             .autocorrectionDisabled(true)
             .textContentType(.URL)
             .disabled(viewModel.isLoading)
-            .overlay(
-                RoundedRectangle(cornerRadius: 6)
-                    .stroke(viewModel.shouldShowError() ? Color.red : Color.clear, lineWidth: 1)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 16)
+            .background(
+                .ultraThinMaterial,
+                in: RoundedRectangle(cornerRadius: 14, style: .continuous)
             )
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(viewModel.shouldShowError() ? Color.red : Color.white.opacity(0.2), lineWidth: 1)
+            )
+            .shadow(color: Color.black.opacity(0.08), radius: 10, x: 0, y: 4)
 
         if viewModel.shouldShowError(), let error = viewModel.validationError() {
             Text(error)
@@ -127,12 +134,21 @@ private extension AddPodcastView {
                 ProgressView()
                     .tint(.white)
             } else {
-                Text("Carregar")
+                HStack(spacing: 8) {
+                    Text("Carregar")
+                        .font(.headline.weight(.semibold))
+                    Image(systemName: "arrow.right.circle.fill")
+                        .imageScale(.medium)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
             }
         }
-        .frame(minWidth: 120)
+        .controlSize(.regular)
+        .frame(width: 200, height: 48)
         .disabled(!viewModel.isValidURL(viewModel.inputText) || viewModel.isLoading)
         .buttonStyle(.borderedProminent)
+        .frame(maxWidth: .infinity)
     }
 
     @ViewBuilder
@@ -145,17 +161,74 @@ private extension AddPodcastView {
                 systemImage: "tray.fill",
             )
         } else {
-            List(feedHistory) { item in
-                Button {
-                    viewModel.inputText = item.url
-                } label: {
-                    Text(item.url)
-                        .foregroundStyle(.primary)
+            List {
+                Section("Recentes") {
+                    let artworkByURL: [String: URL] = podcasts.reduce(into: [:]) { partialResult, podcast in
+                        guard let artworkString = podcast.imageURL,
+                              let artworkURL = URL(string: artworkString) else { return }
+                        partialResult[podcast.feedURL] = artworkURL
+                    }
+
+                    ForEach(feedHistory) { item in
+                        Button {
+                            viewModel.inputText = item.url
+                        } label: {
+                            HStack(spacing: 12) {
+                                historyArtwork(
+                                    for: item.url,
+                                    artworkByURL: artworkByURL
+                                )
+                                Text(item.url)
+                                    .foregroundStyle(.primary)
+                                    .lineLimit(1)
+                                    .truncationMode(.middle)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
-                .buttonStyle(.plain)
             }
-            .listStyle(.plain)
+            .listStyle(.insetGrouped)
+            .listRowSeparator(.visible)
         }
+    }
+
+    @ViewBuilder
+    private func historyArtwork(
+        for url: String,
+        artworkByURL: [String: URL]
+    ) -> some View {
+        if let imageURL = artworkByURL[url] {
+            AsyncImage(url: imageURL) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .resizable()
+                        .scaledToFill()
+                case .empty, .failure:
+                    placeholderIcon
+                @unknown default:
+                    placeholderIcon
+                }
+            }
+            .frame(width: 28, height: 28)
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+            .overlay(
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(Color.gray.opacity(0.15), lineWidth: 1)
+            )
+        } else {
+            placeholderIcon
+                .frame(width: 28, height: 28)
+                .background(Color.gray.opacity(0.12))
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+        }
+    }
+
+    private var placeholderIcon: some View {
+        Image(systemName: "dot.radiowaves.left.and.right")
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     @ViewBuilder
