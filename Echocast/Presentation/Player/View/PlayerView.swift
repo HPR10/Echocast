@@ -7,7 +7,6 @@
 
 import SwiftUI
 import Observation
-import UIKit
 
 struct PlayerRouteView: View {
     @Environment(PlayerCoordinator.self) private var playerCoordinator
@@ -59,16 +58,21 @@ struct PlayerView: View {
     var body: some View {
         @Bindable var viewModel = viewModel
 
-        VStack(spacing: 24) {
-            podcastBanner
-            headerSection
-            downloadSection
-            progressSection
-            controlSection
-            playbackSection
-            Spacer()
+        GeometryReader { geometry in
+            let bannerHeight = geometry.size.height * 0.35
+
+            VStack(spacing: 24) {
+                podcastBanner(height: bannerHeight)
+                headerSection
+                downloadSection
+                progressSection
+                controlSection
+                playbackSection
+                Spacer()
+            }
+            .padding()
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
-        .padding()
         .navigationTitle("Player")
         .navigationBarTitleDisplayMode(.inline)
         .alert("Erro", isPresented: .init(
@@ -89,12 +93,8 @@ struct PlayerView: View {
 
 private extension PlayerView {
 
-    private var bannerHeight: CGFloat {
-        UIScreen.main.bounds.height * 0.35
-    }
-
     @ViewBuilder
-    var podcastBanner: some View {
+    func podcastBanner(height: CGFloat) -> some View {
         Group {
             if let podcastImageURL {
                 AsyncImage(url: podcastImageURL) { phase in
@@ -116,7 +116,7 @@ private extension PlayerView {
             }
         }
         .frame(maxWidth: .infinity)
-        .frame(height: bannerHeight)
+        .frame(height: height)
         .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
