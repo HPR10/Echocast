@@ -38,13 +38,14 @@ struct FavoritesView: View {
                             }
                         }
                         .onDelete { indexSet in
-                            let favoritesToRemove = indexSet.compactMap { index -> FavoriteEpisode? in
-                                guard viewModel.favorites.indices.contains(index) else { return nil }
-                                return viewModel.favorites[index]
+                            let favoritesSnapshot = viewModel.favorites
+                            let playbackKeys = indexSet.compactMap { index in
+                                guard favoritesSnapshot.indices.contains(index) else { return nil }
+                                return favoritesSnapshot[index].playbackKey
                             }
 
                             Task { @MainActor in
-                                let playbackKeys = favoritesToRemove.map(\.playbackKey)
+                                guard !playbackKeys.isEmpty else { return }
                                 await viewModel.remove(playbackKeys: playbackKeys)
                             }
                         }
