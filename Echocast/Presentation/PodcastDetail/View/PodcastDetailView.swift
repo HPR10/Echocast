@@ -23,7 +23,8 @@ struct PodcastDetailView: View {
         .navigationDestination(for: Episode.self) { episode in
             PlayerRouteView(
                 episode: episode,
-                podcastTitle: viewModel.podcast.title
+                podcastTitle: viewModel.podcast.title,
+                podcastImageURL: viewModel.podcast.imageURL
             )
         }
         .alert("Erro ao baixar", isPresented: .init(
