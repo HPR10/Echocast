@@ -241,7 +241,9 @@ private extension PlayerView {
     @ViewBuilder
     var controlSection: some View {
         VStack(spacing: 12) {
-            HStack(spacing: 24) {
+            HStack(spacing: 20) {
+                Spacer(minLength: 16)
+
                 Button {
                     viewModel.skipBackward()
                 } label: {
@@ -274,22 +276,27 @@ private extension PlayerView {
                 .buttonStyle(.plain)
                 .accessibilityLabel("Avancar 15 segundos")
                 .disabled(!viewModel.hasAudio || !viewModel.isSeekable)
-            }
 
-            HStack {
-                Text("Velocidade")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                Spacer()
+                Spacer(minLength: 8)
+
                 Menu {
                     ForEach(viewModel.availablePlaybackRates, id: \.self) { rate in
-                        Button(String(format: "%.2gx", rate)) {
+                        Button {
                             viewModel.setPlaybackRate(rate)
+                        } label: {
+                            HStack {
+                                Text(String(format: "%.2gx", rate))
+                                if rate == viewModel.playbackRate {
+                                    Image(systemName: "checkmark")
+                                }
+                            }
                         }
                     }
                 } label: {
-                    Label(viewModel.playbackRateText, systemImage: "speedometer")
-                        .frame(minWidth: 120)
+                    Image(systemName: "ellipsis.circle")
+                        .font(.system(size: 20, weight: .semibold))
+                        .frame(width: 36, height: 36)
+                        .accessibilityLabel("Opcoes de playback")
                 }
                 .disabled(!viewModel.hasAudio)
             }
