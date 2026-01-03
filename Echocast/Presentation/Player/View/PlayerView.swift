@@ -242,8 +242,6 @@ private extension PlayerView {
     var controlSection: some View {
         VStack(spacing: 12) {
             HStack(spacing: 20) {
-                Spacer(minLength: 16)
-
                 Button {
                     viewModel.skipBackward()
                 } label: {
@@ -276,9 +274,9 @@ private extension PlayerView {
                 .buttonStyle(.plain)
                 .accessibilityLabel("Avancar 15 segundos")
                 .disabled(!viewModel.hasAudio || !viewModel.isSeekable)
-
-                Spacer(minLength: 8)
-
+            }
+            .frame(maxWidth: .infinity)
+            .overlay(alignment: .trailing) {
                 Menu {
                     ForEach(viewModel.availablePlaybackRates, id: \.self) { rate in
                         Button {
@@ -299,6 +297,7 @@ private extension PlayerView {
                         .accessibilityLabel("Opcoes de playback")
                 }
                 .disabled(!viewModel.hasAudio)
+                .padding(.trailing, 4)
             }
         }
     }
