@@ -39,23 +39,23 @@ struct RootTabView: View {
                     Label("Baixados", systemImage: "tray.and.arrow.down.fill")
                 }
 
-            ProfilePlaceholderView()
+            SearchPlaceholderView()
                 .tabItem {
-                    Label("Perfil", systemImage: "person.crop.circle")
+                    Label("Buscar", systemImage: "magnifyingglass")
                 }
         }
     }
 }
 
-private struct ProfilePlaceholderView: View {
+private struct SearchPlaceholderView: View {
     var body: some View {
         NavigationStack {
             ContentUnavailableView(
-                "Perfil",
-                systemImage: "person.crop.circle",
-                description: Text("Configure sua conta e preferências em breve.")
+                "Buscar",
+                systemImage: "magnifyingglass",
+                description: Text("Procure novos podcasts em breve.")
             )
-            .navigationTitle("Perfil")
+            .navigationTitle("Buscar")
         }
     }
 }
