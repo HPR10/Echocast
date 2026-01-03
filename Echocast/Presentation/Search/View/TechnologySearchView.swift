@@ -15,6 +15,8 @@ struct TechnologySearchView: View {
     }
 
     var body: some View {
+        @Bindable var viewModel = viewModel
+
         NavigationStack {
             Group {
                 if viewModel.isLoading {
@@ -41,49 +43,76 @@ struct TechnologySearchView: View {
                         description: Text("Toque em atualizar para buscar podcasts de tecnologia.")
                     )
                 } else {
-                    List(viewModel.podcasts) { podcast in
-                        HStack(spacing: 12) {
-                            AsyncImage(url: podcast.imageURL) { phase in
-                                switch phase {
-                                case let .success(image):
-                                    image
-                                        .resizable()
-                                        .scaledToFill()
-                                case .empty:
-                                    ProgressView()
-                                default:
-                                    Image(systemName: "waveform")
-                                        .resizable()
-                                        .scaledToFit()
-                                        .foregroundStyle(.secondary)
+                    List {
+                        ForEach(viewModel.podcasts) { podcast in
+                            HStack(spacing: 12) {
+                                AsyncImage(url: podcast.imageURL) { phase in
+                                    switch phase {
+                                    case let .success(image):
+                                        image
+                                            .resizable()
+                                            .scaledToFill()
+                                    case .empty:
+                                        ProgressView()
+                                    default:
+                                        Image(systemName: "waveform")
+                                            .resizable()
+                                            .scaledToFit()
+                                            .foregroundStyle(.secondary)
+                                    }
                                 }
-                            }
-                            .frame(width: 60, height: 60)
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .stroke(.quaternary, lineWidth: 0.5)
-                            )
+                                .frame(width: 60, height: 60)
+                                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                        .stroke(.quaternary, lineWidth: 0.5)
+                                )
 
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(podcast.title)
-                                    .font(.headline)
-                                    .lineLimit(2)
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(podcast.title)
+                                        .font(.headline)
+                                        .lineLimit(2)
 
-                                if let author = podcast.author {
-                                    Text(author)
-                                        .font(.subheadline)
+                                    if let author = podcast.author {
+                                        Text(author)
+                                            .font(.subheadline)
+                                            .foregroundStyle(.secondary)
+                                            .lineLimit(1)
+                                    }
+
+                                    Text(podcast.feedURL.absoluteString)
+                                        .font(.caption)
                                         .foregroundStyle(.secondary)
                                         .lineLimit(1)
                                 }
-
-                                Text(podcast.feedURL.absoluteString)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                    .lineLimit(1)
+                            }
+                            .padding(.vertical, 4)
+                            .onAppear {
+                                Task {
+                                    await viewModel.loadMoreIfNeeded(currentPodcast: podcast)
+                                }
                             }
                         }
-                        .padding(.vertical, 4)
+
+                        if viewModel.isLoadingMore {
+                            HStack {
+                                Spacer()
+                                ProgressView("Carregando mais...")
+                                    .padding(.vertical, 8)
+                                Spacer()
+                            }
+                        } else if viewModel.hasMore {
+                            HStack {
+                                Spacer()
+                                ProgressView()
+                                    .padding(.vertical, 8)
+                                    .opacity(0.01)
+                                Spacer()
+                            }
+                            .onAppear {
+                                Task { await viewModel.loadMore() }
+                            }
+                        }
                     }
                     .listStyle(.insetGrouped)
                     .refreshable {

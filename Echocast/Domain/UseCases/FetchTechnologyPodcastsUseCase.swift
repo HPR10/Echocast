@@ -14,7 +14,7 @@ struct FetchTechnologyPodcastsUseCase {
         self.discoveryService = discoveryService
     }
 
-    func execute() async throws -> [DiscoveredPodcast] {
-        try await discoveryService.fetchTechnologyPodcasts()
+    func execute(limit: Int = 25, offset: Int = 0) async throws -> [DiscoveredPodcast] {
+        try await discoveryService.fetchTechnologyPodcasts(limit: limit, offset: offset)
     }
 }

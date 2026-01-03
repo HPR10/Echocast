@@ -21,8 +21,8 @@ struct ApplePodcastDiscoveryService: PodcastDiscoveryServiceProtocol {
         let artworkUrl600: String?
     }
 
-    func fetchTechnologyPodcasts() async throws -> [DiscoveredPodcast] {
-        guard let url = buildURL() else { return [] }
+    func fetchTechnologyPodcasts(limit: Int, offset: Int) async throws -> [DiscoveredPodcast] {
+        guard let url = buildURL(limit: limit, offset: offset) else { return [] }
 
         let (data, _) = try await URLSession.shared.data(from: url)
         let response = try JSONDecoder().decode(SearchResponse.self, from: data)
@@ -45,12 +45,13 @@ struct ApplePodcastDiscoveryService: PodcastDiscoveryServiceProtocol {
         }
     }
 
-    private func buildURL() -> URL? {
+    private func buildURL(limit: Int, offset: Int) -> URL? {
         var components = URLComponents(string: "https://itunes.apple.com/search")
         components?.queryItems = [
             URLQueryItem(name: "media", value: "podcast"),
             URLQueryItem(name: "term", value: "technology"),
-            URLQueryItem(name: "limit", value: "25"),
+            URLQueryItem(name: "limit", value: String(limit)),
+            URLQueryItem(name: "offset", value: String(offset)),
             URLQueryItem(name: "genreId", value: "1318")
         ]
         return components?.url

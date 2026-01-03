@@ -8,5 +8,5 @@
 import Foundation
 
 protocol PodcastDiscoveryServiceProtocol: Sendable {
-    func fetchTechnologyPodcasts() async throws -> [DiscoveredPodcast]
+    func fetchTechnologyPodcasts(limit: Int, offset: Int) async throws -> [DiscoveredPodcast]
 }
