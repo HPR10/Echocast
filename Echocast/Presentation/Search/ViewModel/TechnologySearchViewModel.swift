@@ -12,6 +12,7 @@ import Observation
 @MainActor
 final class TechnologySearchViewModel {
     private let fetchUseCase: FetchTechnologyPodcastsUseCase
+    private let syncPodcastUseCase: SyncPodcastFeedUseCase
     private let pageSize = 25
 
     private var nextOffset = 0
@@ -21,10 +22,17 @@ final class TechnologySearchViewModel {
     var isLoading = false
     var isLoadingMore = false
     var errorMessage: String?
+    var isLoadingPodcast = false
+    var selectedPodcast: Podcast?
+    var selectionError: String?
     var hasMore: Bool { canLoadMore }
 
-    init(fetchUseCase: FetchTechnologyPodcastsUseCase) {
+    init(
+        fetchUseCase: FetchTechnologyPodcastsUseCase,
+        syncPodcastUseCase: SyncPodcastFeedUseCase
+    ) {
         self.fetchUseCase = fetchUseCase
+        self.syncPodcastUseCase = syncPodcastUseCase
     }
 
     func loadIfNeeded() async {
@@ -78,5 +86,24 @@ final class TechnologySearchViewModel {
         } catch {
             // Keep canLoadMore true to allow retry when reaching the end again.
         }
+    }
+
+    func selectPodcast(_ discoveredPodcast: DiscoveredPodcast) async {
+        guard !isLoadingPodcast else { return }
+        isLoadingPodcast = true
+        selectionError = nil
+
+        do {
+            let podcast = try await syncPodcastUseCase.execute(from: discoveredPodcast.feedURL)
+            selectedPodcast = podcast
+        } catch {
+            selectionError = "Não foi possível abrir este podcast agora."
+        }
+
+        isLoadingPodcast = false
+    }
+
+    func clearSelectedPodcast() {
+        selectedPodcast = nil
     }
 }

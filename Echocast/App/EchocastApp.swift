@@ -87,6 +87,10 @@ struct EchocastApp: App {
             technologySearchViewModel = TechnologySearchViewModel(
                 fetchUseCase: FetchTechnologyPodcastsUseCase(
                     discoveryService: podcastDiscoveryService
+                ),
+                syncPodcastUseCase: SyncPodcastFeedUseCase(
+                    loadPodcastUseCase: loadPodcastUseCase,
+                    repository: podcastRepository
                 )
             )
             let audioPlayerService = AudioPlayerService()

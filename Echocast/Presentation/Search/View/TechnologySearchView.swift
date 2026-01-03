@@ -9,6 +9,8 @@ import SwiftUI
 
 struct TechnologySearchView: View {
     @State private var viewModel: TechnologySearchViewModel
+    @State private var navigationPath = NavigationPath()
+    @State private var isShowingSelectionError = false
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 12), count: 2)
 
     init(viewModel: TechnologySearchViewModel) {
@@ -18,7 +20,7 @@ struct TechnologySearchView: View {
     var body: some View {
         @Bindable var viewModel = viewModel
 
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
             Group {
                 if viewModel.isLoading {
                     ProgressView("Carregando...")
@@ -46,42 +48,47 @@ struct TechnologySearchView: View {
                 } else {
                     ScrollView {
                         LazyVGrid(columns: columns, spacing: 12) {
-                        ForEach(viewModel.podcasts) { podcast in
-                            AsyncImage(url: podcast.imageURL) { phase in
-                                switch phase {
-                                case let .success(image):
-                                    image
-                                        .resizable()
-                                        .scaledToFill()
-                                case .empty:
-                                    ZStack {
-                                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                            .fill(.quaternary.opacity(0.2))
-                                        ProgressView()
+                            ForEach(viewModel.podcasts) { podcast in
+                                Button {
+                                    Task { await viewModel.selectPodcast(podcast) }
+                                } label: {
+                                    AsyncImage(url: podcast.imageURL) { phase in
+                                        switch phase {
+                                        case let .success(image):
+                                            image
+                                                .resizable()
+                                                .scaledToFill()
+                                        case .empty:
+                                            ZStack {
+                                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                                    .fill(.quaternary.opacity(0.2))
+                                                ProgressView()
+                                            }
+                                        default:
+                                            ZStack {
+                                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                                    .fill(.quaternary.opacity(0.2))
+                                                Image(systemName: "waveform")
+                                                    .font(.title2)
+                                                    .foregroundStyle(.secondary)
+                                            }
+                                        }
                                     }
-                                default:
-                                    ZStack {
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 140)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                    .overlay(
                                         RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                            .fill(.quaternary.opacity(0.2))
-                                        Image(systemName: "waveform")
-                                            .font(.title2)
-                                            .foregroundStyle(.secondary)
+                                            .stroke(.quaternary, lineWidth: 0.5)
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                                .onAppear {
+                                    Task {
+                                        await viewModel.loadMoreIfNeeded(currentPodcast: podcast)
                                     }
                                 }
                             }
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 140)
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .stroke(.quaternary, lineWidth: 0.5)
-                            )
-                            .onAppear {
-                                Task {
-                                    await viewModel.loadMoreIfNeeded(currentPodcast: podcast)
-                                }
-                            }
-                        }
 
                             if viewModel.isLoadingMore {
                                 HStack {
@@ -108,9 +115,44 @@ struct TechnologySearchView: View {
                     }
                 }
             }
+            .navigationDestination(for: Podcast.self) { podcast in
+                PodcastDetailView(
+                    viewModel: PodcastDetailViewModel(podcast: podcast)
+                )
+            }
         }
         .task {
             await viewModel.loadIfNeeded()
+        }
+        .onChange(of: viewModel.selectedPodcast) { _, podcast in
+            if let podcast {
+                navigationPath.append(podcast)
+                viewModel.clearSelectedPodcast()
+            }
+        }
+        .alert("Erro ao abrir", isPresented: $isShowingSelectionError) {
+            Button("OK") { }
+        } message: {
+            Text(viewModel.selectionError ?? "Tente novamente mais tarde.")
+        }
+        .onChange(of: viewModel.selectionError) { _, error in
+            isShowingSelectionError = error != nil
+        }
+        .overlay {
+            if viewModel.isLoadingPodcast {
+                ZStack {
+                    Color(.systemBackground)
+                        .ignoresSafeArea()
+
+                    VStack(spacing: 12) {
+                        ProgressView()
+                            .controlSize(.large)
+                        Text("Carregando podcast...")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
         }
     }
 }
