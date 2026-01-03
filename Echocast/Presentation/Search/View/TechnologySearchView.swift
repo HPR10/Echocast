@@ -108,16 +108,6 @@ struct TechnologySearchView: View {
                     }
                 }
             }
-            .navigationTitle("Buscar")
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        Task { await viewModel.loadPodcasts() }
-                    } label: {
-                        Label("Atualizar", systemImage: "arrow.clockwise")
-                    }
-                }
-            }
         }
         .task {
             await viewModel.loadIfNeeded()
