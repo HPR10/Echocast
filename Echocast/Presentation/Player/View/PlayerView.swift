@@ -59,7 +59,7 @@ struct PlayerView: View {
         @Bindable var viewModel = viewModel
 
         GeometryReader { geometry in
-            let bannerHeight = geometry.size.height * 0.35
+            let bannerHeight = geometry.size.height * 0.25
 
             VStack(spacing: 24) {
                 podcastBanner(height: bannerHeight)
