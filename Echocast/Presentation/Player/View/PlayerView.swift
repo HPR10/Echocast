@@ -42,6 +42,8 @@ struct PlayerView: View {
     @State private var isFavorite = false
     @State private var fullDescriptionText: String? = nil
     @State private var descriptionDetent: PresentationDetent = .fraction(0.33)
+    @State private var backwardRotation: Double = 0
+    @State private var forwardRotation: Double = 0
 
     init(
         viewModel: PlayerViewModel,
@@ -285,10 +287,15 @@ private extension PlayerView {
             HStack(spacing: 20) {
                 Button {
                     viewModel.skipBackward()
+                    withAnimation(.easeInOut(duration: 0.35)) {
+                        backwardRotation -= 360
+                    }
                 } label: {
                     Image(systemName: "gobackward.30")
                         .font(.system(size: 32, weight: .semibold))
                         .frame(width: 72, height: 48)
+                        .rotationEffect(.degrees(backwardRotation))
+                        .animation(.easeInOut(duration: 0.35), value: backwardRotation)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Voltar 30 segundos")
@@ -307,10 +314,15 @@ private extension PlayerView {
 
                 Button {
                     viewModel.skipForward()
+                    withAnimation(.easeInOut(duration: 0.35)) {
+                        forwardRotation += 360
+                    }
                 } label: {
                     Image(systemName: "goforward.15")
                         .font(.system(size: 32, weight: .semibold))
                         .frame(width: 72, height: 48)
+                        .rotationEffect(.degrees(forwardRotation))
+                        .animation(.easeInOut(duration: 0.35), value: forwardRotation)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Avancar 15 segundos")
