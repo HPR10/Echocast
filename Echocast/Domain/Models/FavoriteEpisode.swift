@@ -24,10 +24,22 @@ struct FavoriteEpisode: Identifiable, Hashable, Sendable {
         Episode(
             title: title,
             description: summary,
-            audioURL: audioURL,
+            audioURL: resolvedAudioURL,
             duration: duration,
             publishedAt: publishedAt,
             playbackKey: playbackKey
         )
+    }
+
+    private var resolvedAudioURL: URL? {
+        if let audioURL {
+            return audioURL
+        }
+
+        let prefix = "audio:"
+        guard playbackKey.hasPrefix(prefix) else { return nil }
+
+        let audioURLString = String(playbackKey.dropFirst(prefix.count))
+        return URL(string: audioURLString)
     }
 }
