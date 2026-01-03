@@ -312,6 +312,7 @@ extension EpisodeDownloadService: URLSessionDownloadDelegate {
                 playbackKey: playbackKey,
                 title: request.episode.title,
                 podcastTitle: request.podcastTitle,
+                podcastImageURL: request.podcastImageURL,
                 audioURL: request.episode.audioURL ?? targetURL,
                 localFileURL: targetURL,
                 fileSize: fileSize,

@@ -28,7 +28,7 @@ final class EnqueueEpisodeDownloadUseCase {
             throw DownloadError.missingAudioURL
         }
 
-        if let existing = await repository.fetch(playbackKey: request.episode.playbackKey) {
+        if await repository.fetch(playbackKey: request.episode.playbackKey) != nil {
             throw DownloadError.alreadyDownloaded
         }
 
@@ -54,3 +54,4 @@ final class EnqueueEpisodeDownloadUseCase {
         try await downloadService.enqueue(request)
     }
 }
+

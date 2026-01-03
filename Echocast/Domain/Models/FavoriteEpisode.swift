@@ -13,6 +13,7 @@ struct FavoriteEpisode: Identifiable, Hashable, Sendable {
     let playbackKey: String
     let title: String
     let podcastTitle: String
+    let podcastImageURL: URL?
     let summary: String?
     let audioURL: URL?
     let duration: TimeInterval?

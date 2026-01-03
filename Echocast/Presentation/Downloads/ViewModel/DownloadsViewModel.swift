@@ -57,11 +57,16 @@ final class DownloadsViewModel {
             }
     }
 
-    func enqueueDownload(for episode: Episode, podcastTitle: String) async -> String? {
+    func enqueueDownload(
+        for episode: Episode,
+        podcastTitle: String,
+        podcastImageURL: URL?
+    ) async -> String? {
         let request = EpisodeDownloadRequest(
             episode: episode,
             podcastTitle: podcastTitle,
-            expectedSizeInBytes: nil
+            expectedSizeInBytes: nil,
+            podcastImageURL: podcastImageURL
         )
         do {
             inflightMetadata[episode.playbackKey] = (title: episode.title, podcastTitle: podcastTitle)

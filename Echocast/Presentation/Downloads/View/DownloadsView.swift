@@ -44,7 +44,7 @@ struct DownloadsView: View {
                                         playbackKey: item.playbackKey
                                     ),
                                     podcastTitle: item.podcastTitle,
-                                    podcastImageURL: nil
+                                    podcastImageURL: item.podcastImageURL
                                 )
                             } label: {
                                 VStack(alignment: .leading, spacing: 6) {

@@ -32,7 +32,7 @@ struct FavoritesView: View {
                                 PlayerRouteView(
                                     episode: favorite.episode,
                                     podcastTitle: favorite.podcastTitle,
-                                    podcastImageURL: nil
+                                    podcastImageURL: favorite.podcastImageURL
                                 )
                             } label: {
                                 FavoriteEpisodeRow(favorite: favorite)

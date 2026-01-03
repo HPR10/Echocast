@@ -12,6 +12,7 @@ struct DownloadedEpisode: Sendable, Identifiable, Hashable {
     let playbackKey: String
     let title: String
     let podcastTitle: String
+    let podcastImageURL: URL?
     let audioURL: URL
     let localFileURL: URL
     let fileSize: Int64
@@ -23,6 +24,7 @@ struct DownloadedEpisode: Sendable, Identifiable, Hashable {
         playbackKey: String,
         title: String,
         podcastTitle: String,
+        podcastImageURL: URL? = nil,
         audioURL: URL,
         localFileURL: URL,
         fileSize: Int64,
@@ -33,6 +35,7 @@ struct DownloadedEpisode: Sendable, Identifiable, Hashable {
         self.playbackKey = playbackKey
         self.title = title
         self.podcastTitle = podcastTitle
+        self.podcastImageURL = podcastImageURL
         self.audioURL = audioURL
         self.localFileURL = localFileURL
         self.fileSize = fileSize

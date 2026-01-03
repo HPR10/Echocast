@@ -13,6 +13,7 @@ final class FavoriteEpisodeEntity {
     @Attribute(.unique) var playbackKey: String
     var title: String
     var podcastTitle: String
+    var podcastImageURL: String?
     var summary: String?
     var audioURL: String?
     var duration: TimeInterval?
@@ -23,6 +24,7 @@ final class FavoriteEpisodeEntity {
         playbackKey: String,
         title: String,
         podcastTitle: String,
+        podcastImageURL: String? = nil,
         summary: String?,
         audioURL: String?,
         duration: TimeInterval?,
@@ -32,6 +34,7 @@ final class FavoriteEpisodeEntity {
         self.playbackKey = playbackKey
         self.title = title
         self.podcastTitle = podcastTitle
+        self.podcastImageURL = podcastImageURL
         self.summary = summary
         self.audioURL = audioURL
         self.duration = duration

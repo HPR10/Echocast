@@ -85,7 +85,8 @@ private extension PodcastDetailView {
                         Task { @MainActor in
                             downloadError = await downloadsViewModel.enqueueDownload(
                                 for: episode,
-                                podcastTitle: viewModel.podcast.title
+                                podcastTitle: viewModel.podcast.title,
+                                podcastImageURL: viewModel.podcast.imageURL
                             )
                         }
                     } label: {

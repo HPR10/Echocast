@@ -11,14 +11,17 @@ struct EpisodeDownloadRequest: Sendable {
     let episode: Episode
     let podcastTitle: String
     let expectedSizeInBytes: Int64?
+    let podcastImageURL: URL?
 
     init(
         episode: Episode,
         podcastTitle: String,
-        expectedSizeInBytes: Int64? = nil
+        expectedSizeInBytes: Int64? = nil,
+        podcastImageURL: URL? = nil
     ) {
         self.episode = episode
         self.podcastTitle = podcastTitle
         self.expectedSizeInBytes = expectedSizeInBytes
+        self.podcastImageURL = podcastImageURL
     }
 }

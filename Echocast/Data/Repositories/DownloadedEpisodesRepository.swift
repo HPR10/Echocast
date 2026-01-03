@@ -131,6 +131,7 @@ final class DownloadedEpisodesRepository: DownloadedEpisodesRepositoryProtocol {
             playbackKey: model.playbackKey,
             title: model.title,
             podcastTitle: model.podcastTitle,
+            podcastImageURL: model.podcastImageURL?.absoluteString,
             audioURL: model.audioURL.absoluteString,
             localFilePath: model.localFileURL.path,
             fileSize: model.fileSize,
@@ -143,6 +144,7 @@ final class DownloadedEpisodesRepository: DownloadedEpisodesRepositoryProtocol {
         entity.playbackKey = model.playbackKey
         entity.title = model.title
         entity.podcastTitle = model.podcastTitle
+        entity.podcastImageURL = model.podcastImageURL?.absoluteString
         entity.audioURL = model.audioURL.absoluteString
         entity.localFilePath = model.localFileURL.path
         entity.fileSize = model.fileSize
@@ -154,16 +156,71 @@ final class DownloadedEpisodesRepository: DownloadedEpisodesRepositoryProtocol {
         _ entity: DownloadedEpisodeEntity,
         localFileURL: URL
     ) -> DownloadedEpisode {
-        DownloadedEpisode(
+        let podcastImageURL = resolvePodcastImageURL(for: entity)
+
+        return DownloadedEpisode(
             playbackKey: entity.playbackKey,
             title: entity.title,
             podcastTitle: entity.podcastTitle,
+            podcastImageURL: podcastImageURL,
             audioURL: URL(string: entity.audioURL) ?? URL(fileURLWithPath: entity.audioURL),
             localFileURL: localFileURL,
             fileSize: entity.fileSize,
             downloadedAt: entity.downloadedAt,
             expiresAt: entity.expiresAt
         )
+    }
+
+    private func resolvePodcastImageURL(for entity: DownloadedEpisodeEntity) -> URL? {
+        if let stored = entity.podcastImageURL.flatMap(URL.init(string:)) {
+            return stored
+        }
+
+        guard let resolved = findPodcastImageURL(
+            playbackKey: entity.playbackKey,
+            audioURL: entity.audioURL
+        ) else {
+            return nil
+        }
+
+        entity.podcastImageURL = resolved.absoluteString
+        saveContext(action: "backfillDownloadedPodcastImage")
+        return resolved
+    }
+
+    private func findPodcastImageURL(
+        playbackKey: String,
+        audioURL: String
+    ) -> URL? {
+        if let byPlayback = fetchEpisode(
+            predicate: #Predicate<EpisodeEntity> { $0.dedupKey == playbackKey }
+        ),
+           let image = byPlayback.podcast?.imageURL,
+           let url = URL(string: image) {
+            return url
+        }
+
+        if let byAudio = fetchEpisode(
+            predicate: #Predicate<EpisodeEntity> { $0.audioURL == audioURL }
+        ),
+           let image = byAudio.podcast?.imageURL,
+           let url = URL(string: image) {
+            return url
+        }
+
+        return nil
+    }
+
+    private func fetchEpisode(
+        predicate: Predicate<EpisodeEntity>
+    ) -> EpisodeEntity? {
+        var descriptor = FetchDescriptor<EpisodeEntity>(
+            predicate: predicate
+        )
+        descriptor.fetchLimit = 1
+
+        let result = try? modelContext.fetch(descriptor)
+        return result?.first
     }
 
     private func resolveLocalURL(for entity: DownloadedEpisodeEntity) -> URL? {

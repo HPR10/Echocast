@@ -28,10 +28,15 @@ final class FavoritesViewModel {
         favorites = await manageFavoritesUseCase.list()
     }
 
-    func toggleFavorite(for episode: Episode, podcastTitle: String) async -> Bool {
+    func toggleFavorite(
+        for episode: Episode,
+        podcastTitle: String,
+        podcastImageURL: URL?
+    ) async -> Bool {
         let isFavorite = await manageFavoritesUseCase.toggleFavorite(
             episode: episode,
-            podcastTitle: podcastTitle
+            podcastTitle: podcastTitle,
+            podcastImageURL: podcastImageURL
         )
         await refresh()
         return isFavorite

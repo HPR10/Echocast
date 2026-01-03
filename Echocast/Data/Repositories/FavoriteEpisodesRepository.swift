@@ -29,6 +29,7 @@ final class FavoriteEpisodesRepository: FavoriteEpisodesRepositoryProtocol {
             playbackKey: episode.playbackKey,
             title: episode.title,
             podcastTitle: episode.podcastTitle,
+            podcastImageURL: episode.podcastImageURL?.absoluteString,
             summary: episode.summary,
             audioURL: episode.audioURL?.absoluteString,
             duration: episode.duration,
@@ -38,6 +39,7 @@ final class FavoriteEpisodesRepository: FavoriteEpisodesRepositoryProtocol {
 
         entity.title = episode.title
         entity.podcastTitle = episode.podcastTitle
+        entity.podcastImageURL = episode.podcastImageURL?.absoluteString
         entity.summary = episode.summary
         entity.audioURL = episode.audioURL?.absoluteString
         entity.duration = episode.duration
@@ -72,6 +74,7 @@ final class FavoriteEpisodesRepository: FavoriteEpisodesRepositoryProtocol {
             playbackKey: entity.playbackKey,
             title: entity.title,
             podcastTitle: entity.podcastTitle,
+            podcastImageURL: entity.podcastImageURL.flatMap(URL.init(string:)),
             summary: entity.summary,
             audioURL: entity.audioURL.flatMap(URL.init(string:)),
             duration: entity.duration,

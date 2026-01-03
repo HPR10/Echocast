@@ -13,6 +13,7 @@ final class DownloadedEpisodeEntity {
     @Attribute(.unique) var playbackKey: String
     var title: String
     var podcastTitle: String
+    var podcastImageURL: String?
     var audioURL: String
     var localFilePath: String
     var fileSize: Int64
@@ -23,6 +24,7 @@ final class DownloadedEpisodeEntity {
         playbackKey: String,
         title: String,
         podcastTitle: String,
+        podcastImageURL: String? = nil,
         audioURL: String,
         localFilePath: String,
         fileSize: Int64,
@@ -32,6 +34,7 @@ final class DownloadedEpisodeEntity {
         self.playbackKey = playbackKey
         self.title = title
         self.podcastTitle = podcastTitle
+        self.podcastImageURL = podcastImageURL
         self.audioURL = audioURL
         self.localFilePath = localFilePath
         self.fileSize = fileSize

@@ -126,7 +126,8 @@ private extension PlayerView {
                         Task { @MainActor in
                             downloadError = await downloadsViewModel.enqueueDownload(
                                 for: viewModel.episode,
-                                podcastTitle: viewModel.podcastTitle
+                                podcastTitle: viewModel.podcastTitle,
+                                podcastImageURL: podcastImageURL
                             )
                         }
                     } label: {
@@ -192,7 +193,8 @@ private extension PlayerView {
                 guard let favoritesViewModel else { return }
                 let newState = await favoritesViewModel.toggleFavorite(
                     for: viewModel.episode,
-                    podcastTitle: viewModel.podcastTitle
+                    podcastTitle: viewModel.podcastTitle,
+                    podcastImageURL: podcastImageURL
                 )
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
                     isFavorite = newState
