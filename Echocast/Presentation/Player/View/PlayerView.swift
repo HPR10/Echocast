@@ -59,10 +59,16 @@ struct PlayerView: View {
         @Bindable var viewModel = viewModel
 
         GeometryReader { geometry in
-            let bannerHeight = geometry.size.height * 0.25
+            let bannerSize = min(
+                max(geometry.size.height * 0.25, 170),
+                geometry.size.width * 0.75
+            )
 
             VStack(spacing: 24) {
-                podcastBanner(height: bannerHeight)
+                PodcastArtworkView(
+                    imageURL: podcastImageURL,
+                    size: bannerSize
+                )
                 headerSection
                 downloadSection
                 progressSection
@@ -92,43 +98,6 @@ struct PlayerView: View {
 // MARK: - View Components
 
 private extension PlayerView {
-
-    @ViewBuilder
-    func podcastBanner(height: CGFloat) -> some View {
-        Group {
-            if let podcastImageURL {
-                AsyncImage(url: podcastImageURL) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .scaledToFill()
-                    case .failure:
-                        placeholderBanner
-                    case .empty:
-                        ProgressView()
-                    @unknown default:
-                        placeholderBanner
-                    }
-                }
-            } else {
-                placeholderBanner
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .frame(height: height)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-    }
-
-    private var placeholderBanner: some View {
-        LinearGradient(colors: [.purple.opacity(0.6), .blue.opacity(0.6)], startPoint: .topLeading, endPoint: .bottomTrailing)
-            .overlay {
-                Image(systemName: "mic.fill")
-                    .font(.system(size: 60, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.9))
-            }
-    }
-
     @ViewBuilder
     var downloadSection: some View {
         if let downloadsViewModel {

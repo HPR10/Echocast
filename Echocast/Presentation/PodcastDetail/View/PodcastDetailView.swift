@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import NukeUI
 
 struct PodcastDetailView: View {
     let viewModel: PodcastDetailViewModel
@@ -45,25 +44,11 @@ private extension PodcastDetailView {
     @ViewBuilder
     var podcastHeader: some View {
         VStack(spacing: 12) {
-            LazyImage(url: viewModel.podcast.imageURL) { state in
-                if let image = state.image {
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                } else if state.isLoading {
-                    ProgressView()
-                } else {
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.gray.opacity(0.2))
-                        .overlay {
-                            Image(systemName: "mic.fill")
-                                .font(.largeTitle)
-                                .foregroundStyle(.gray)
-                        }
-                }
-            }
-            .frame(width: 150, height: 150)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            PodcastArtworkView(
+                imageURL: viewModel.podcast.imageURL,
+                size: 170,
+                cornerRadius: 12
+            )
 
             if let author = viewModel.podcast.author {
                 Text(author)
