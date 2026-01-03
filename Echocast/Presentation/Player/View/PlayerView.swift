@@ -70,7 +70,6 @@ struct PlayerView: View {
                     size: bannerSize
                 )
                 headerSection
-                downloadSection
                 progressSection
                 controlSection
                 playbackSection
@@ -99,92 +98,110 @@ struct PlayerView: View {
 
 private extension PlayerView {
     @ViewBuilder
-    var downloadSection: some View {
-        if let downloadsViewModel {
-            let playbackKey = viewModel.episode.playbackKey
-            let activeDownload = downloadsViewModel.activeDownloads
-                .first { $0.playbackKey == playbackKey }
-            let isDownloaded = downloadsViewModel.downloads
-                .contains { $0.playbackKey == playbackKey }
+    var headerSection: some View {
+        let playbackKey = viewModel.episode.playbackKey
+        let activeDownload = downloadsViewModel?.activeDownloads
+            .first { $0.playbackKey == playbackKey }
+        let isDownloaded = downloadsViewModel?.downloads
+            .contains { $0.playbackKey == playbackKey } ?? false
 
-            VStack(spacing: 8) {
-                if let activeDownload {
-                    if let fraction = activeDownload.fractionCompleted {
-                        ProgressView(value: fraction)
-                    } else {
-                        ProgressView()
-                    }
-                    Text(downloadProgressLabel(for: activeDownload))
+        VStack(spacing: 8) {
+            HStack(spacing: 8) {
+                downloadButton(
+                    activeDownload: activeDownload,
+                    isDownloaded: isDownloaded
+                )
+                if let activeDownload,
+                   let percentLabel = downloadProgressPercentage(for: activeDownload) {
+                    Text(percentLabel)
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                } else if isDownloaded {
-                    Label("Baixado", systemImage: "checkmark.circle")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                } else {
-                    Button {
-                        Task { @MainActor in
-                            downloadError = await downloadsViewModel.enqueueDownload(
-                                for: viewModel.episode,
-                                podcastTitle: viewModel.podcastTitle,
-                                podcastImageURL: podcastImageURL
-                            )
-                        }
-                    } label: {
-                        Label("Baixar episodio", systemImage: "arrow.down.circle")
-                            .frame(minWidth: 160)
-                    }
-                    .buttonStyle(.bordered)
-                    .disabled(viewModel.episode.audioURL == nil)
+                        .transition(.opacity)
                 }
-            }
-        }
-    }
-
-    func downloadProgressLabel(for progress: DownloadProgress) -> String {
-        switch progress.state {
-        case .queued:
-            return "Na fila"
-        case .running:
-            if let fraction = progress.fractionCompleted {
-                let percent = Int((fraction * 100).rounded())
-                return "Baixando... \(percent)%"
-            }
-            return "Baixando..."
-        case .finished:
-            return "Concluido"
-        case .failed(let message):
-            return "Falhou: \(message)"
-        case .cancelled:
-            return "Cancelado"
-        }
-    }
-
-    @ViewBuilder
-    var headerSection: some View {
-        VStack(spacing: 8) {
-            HStack {
                 Spacer()
                 favoriteButton
             }
 
-            Text(viewModel.podcastTitle)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
+            if let publishedAt = viewModel.episode.publishedAt {
+                Text(publishedAt, style: .date)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .center)
+            }
 
-            Text(viewModel.episode.title)
-                .font(.title3)
-                .fontWeight(.semibold)
-                .multilineTextAlignment(.center)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(viewModel.episode.title)
+                    .font(.title3)
+                    .fontWeight(.semibold)
+                    .multilineTextAlignment(.leading)
+
+                Text(viewModel.podcastTitle)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.leading)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             if let description = viewModel.episode.description, !description.isEmpty {
                 Text(description)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
+                    .multilineTextAlignment(.leading)
             }
         }
+    }
+
+    @ViewBuilder
+    private func downloadButton(
+        activeDownload: DownloadProgress?,
+        isDownloaded: Bool
+    ) -> some View {
+        if downloadsViewModel == nil {
+            Color.clear
+                .frame(width: 34, height: 34)
+                .opacity(0)
+        } else if let activeDownload {
+            ZStack {
+                Circle()
+                    .stroke(.gray.opacity(0.2), lineWidth: 2)
+                    .frame(width: 34, height: 34)
+
+                ProgressView(value: activeDownload.fractionCompleted ?? 0)
+                    .progressViewStyle(.circular)
+                    .frame(width: 34, height: 34)
+            }
+            .animation(.easeInOut, value: activeDownload.fractionCompleted)
+            .accessibilityLabel("Baixando episodio")
+        } else if isDownloaded {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.title2.weight(.semibold))
+                .foregroundStyle(.blue)
+                .symbolEffect(.bounce, value: isDownloaded)
+                .accessibilityLabel("Episodio baixado")
+        } else {
+            Button {
+                Task { @MainActor in
+                    guard let downloadsViewModel else { return }
+                    downloadError = await downloadsViewModel.enqueueDownload(
+                        for: viewModel.episode,
+                        podcastTitle: viewModel.podcastTitle,
+                        podcastImageURL: podcastImageURL
+                    )
+            }
+        } label: {
+            Image(systemName: "arrow.down.circle")
+                .font(.title2.weight(.semibold))
+        }
+            .buttonStyle(.plain)
+            .disabled(viewModel.episode.audioURL == nil)
+            .accessibilityLabel("Baixar episodio")
+        }
+    }
+
+    func downloadProgressPercentage(for progress: DownloadProgress) -> String? {
+        guard let fraction = progress.fractionCompleted else { return nil }
+        let percent = Int((fraction * 100).rounded())
+        return "\(percent)%"
     }
 
     private var favoriteButton: some View {
@@ -214,21 +231,10 @@ private extension PlayerView {
 
     @ViewBuilder
     var playbackSection: some View {
-        VStack(spacing: 12) {
-            Button {
-                viewModel.togglePlayback()
-            } label: {
-                Label(viewModel.isPlaying ? "Pausar" : "Reproduzir", systemImage: viewModel.isPlaying ? "pause.fill" : "play.fill")
-                    .frame(minWidth: 160)
-            }
-            .buttonStyle(.borderedProminent)
-            .disabled(!viewModel.hasAudio)
-
-            if !viewModel.hasAudio {
-                Text("Audio indisponivel para este episodio.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
+        if !viewModel.hasAudio {
+            Text("Audio indisponivel para este episodio.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
         }
     }
 
@@ -239,19 +245,34 @@ private extension PlayerView {
                 Button {
                     viewModel.skipBackward()
                 } label: {
-                    Label("-30s", systemImage: "gobackward.30")
-                        .frame(minWidth: 80)
+                    Image(systemName: "gobackward.30")
+                        .font(.system(size: 32, weight: .semibold))
+                        .frame(width: 72, height: 48)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.plain)
+                .accessibilityLabel("Voltar 30 segundos")
                 .disabled(!viewModel.hasAudio || !viewModel.isSeekable)
+
+                Button {
+                    viewModel.togglePlayback()
+                } label: {
+                    Image(systemName: viewModel.isPlaying ? "pause.fill" : "play.fill")
+                        .font(.system(size: 40, weight: .bold))
+                        .frame(width: 80, height: 56)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(viewModel.isPlaying ? "Pausar" : "Reproduzir")
+                .disabled(!viewModel.hasAudio)
 
                 Button {
                     viewModel.skipForward()
                 } label: {
-                    Label("+15s", systemImage: "goforward.15")
-                        .frame(minWidth: 80)
+                    Image(systemName: "goforward.15")
+                        .font(.system(size: 32, weight: .semibold))
+                        .frame(width: 72, height: 48)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.plain)
+                .accessibilityLabel("Avancar 15 segundos")
                 .disabled(!viewModel.hasAudio || !viewModel.isSeekable)
             }
 
