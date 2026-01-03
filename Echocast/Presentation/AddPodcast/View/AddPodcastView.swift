@@ -182,6 +182,7 @@ extension AddPodcastView {
                                 )
                                 Text(item.url)
                                     .foregroundStyle(.primary)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
                                     .lineLimit(1)
                                     .truncationMode(.middle)
                             }
@@ -199,8 +200,10 @@ extension AddPodcastView {
                     }
                 }
             }
-            .listStyle(.insetGrouped)
+            .listStyle(.plain)
             .listRowSeparator(.visible)
+            .listRowBackground(Color.clear)
+            .scrollContentBackground(.hidden)
         }
     }
 
