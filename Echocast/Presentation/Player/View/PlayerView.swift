@@ -40,6 +40,8 @@ struct PlayerView: View {
     let podcastImageURL: URL?
     @State private var downloadError: String?
     @State private var isFavorite = false
+    @State private var fullDescriptionText: String? = nil
+    @State private var descriptionDetent: PresentationDetent = .fraction(0.33)
 
     init(
         viewModel: PlayerViewModel,
@@ -77,6 +79,17 @@ struct PlayerView: View {
             }
             .padding()
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .sheet(isPresented: .init(get: { fullDescriptionText != nil }, set: { if !$0 { fullDescriptionText = nil } })) {
+                ScrollView {
+                    Text(fullDescriptionText ?? "")
+                        .font(.body)
+                        .foregroundStyle(.primary)
+                        .multilineTextAlignment(.leading)
+                        .textSelection(.enabled)
+                        .padding()
+                }
+                .presentationDetents([.fraction(0.33), .large], selection: $descriptionDetent)
+            }
         }
         .navigationTitle("Player")
         .navigationBarTitleDisplayMode(.inline)
@@ -143,27 +156,21 @@ private extension PlayerView {
             .frame(maxWidth: .infinity, alignment: .leading)
 
             if let description = viewModel.episode.description, !description.isEmpty {
-                Menu {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text(description)
                         .font(.subheadline)
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(.secondary)
                         .multilineTextAlignment(.leading)
-                        .padding(.vertical, 4)
-                } label: {
-                    HStack(alignment: .firstTextBaseline, spacing: 6) {
-                        Text(description)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.leading)
-                            .lineLimit(3)
-                            .truncationMode(.tail)
-
-                        Image(systemName: "ellipsis")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                        .lineLimit(3)
+                        .truncationMode(.tail)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    descriptionDetent = .fraction(0.33)
+                    fullDescriptionText = description
+                }
+                .accessibilityAddTraits(.isButton)
             }
         }
     }
@@ -325,14 +332,21 @@ private extension PlayerView {
                         }
                     }
                 } label: {
-                    ZStack {
-                        glowCircle(size: 38)
-                        Image(systemName: "speedometer")
-                            .font(.system(size: 20, weight: .semibold))
-                            .frame(width: 36, height: 36)
+                    HStack(spacing: 4) {
+                        Text(String(format: "%.1fx", viewModel.playbackRate))
+                            .font(.system(size: 13, weight: .semibold, design: .rounded))
+                            .monospacedDigit()
                     }
+                    .padding(.horizontal, 10)
+                    .frame(height: 28)
+                    .background(
+                        Capsule()
+                            .fill(.ultraThinMaterial)
+                            .overlay(Capsule().stroke(Color.primary.opacity(0.15), lineWidth: 0.5))
+                            .shadow(color: Color.black.opacity(0.18), radius: 10, x: 0, y: 4)
+                    )
                     .foregroundStyle(.primary)
-                    .accessibilityLabel("Opcoes de playback")
+                    .accessibilityLabel("Velocidade de reproducao")
                 }
                 .disabled(!viewModel.hasAudio)
                 .tint(.primary)
@@ -684,3 +698,4 @@ private final class PreviewFavoritesRepository: FavoriteEpisodesRepositoryProtoc
     .padding()
 }
 #endif
+
