@@ -17,6 +17,7 @@ struct EchocastApp: App {
     let playerCoordinator: PlayerCoordinator
     let downloadsViewModel: DownloadsViewModel
     let favoritesViewModel: FavoritesViewModel
+    let technologySearchViewModel: TechnologySearchViewModel
 
     init() {
         do {
@@ -51,6 +52,7 @@ struct EchocastApp: App {
                 repository: downloadedEpisodesRepository,
                 fileProvider: downloadedFileProvider
             )
+            let podcastDiscoveryService = ApplePodcastDiscoveryService()
             let enqueueDownloadUseCase = EnqueueEpisodeDownloadUseCase(
                 downloadService: downloadService,
                 repository: downloadedEpisodesRepository
@@ -81,6 +83,11 @@ struct EchocastApp: App {
             )
             favoritesViewModel = FavoritesViewModel(
                 manageFavoritesUseCase: manageFavoriteEpisodesUseCase
+            )
+            technologySearchViewModel = TechnologySearchViewModel(
+                fetchUseCase: FetchTechnologyPodcastsUseCase(
+                    discoveryService: podcastDiscoveryService
+                )
             )
             let audioPlayerService = AudioPlayerService()
             addPodcastViewModel = AddPodcastViewModel(
@@ -117,7 +124,8 @@ struct EchocastApp: App {
             RootTabView(
                 addPodcastViewModel: addPodcastViewModel,
                 downloadsViewModel: downloadsViewModel,
-                favoritesViewModel: favoritesViewModel
+                favoritesViewModel: favoritesViewModel,
+                technologySearchViewModel: technologySearchViewModel
             )
             .environment(playerCoordinator)
             .environment(downloadsViewModel)

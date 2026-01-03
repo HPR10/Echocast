@@ -11,15 +11,18 @@ struct RootTabView: View {
     @State private var addPodcastViewModel: AddPodcastViewModel
     @State private var downloadsViewModel: DownloadsViewModel
     @State private var favoritesViewModel: FavoritesViewModel
+    @State private var technologySearchViewModel: TechnologySearchViewModel
 
     init(
         addPodcastViewModel: AddPodcastViewModel,
         downloadsViewModel: DownloadsViewModel,
-        favoritesViewModel: FavoritesViewModel
+        favoritesViewModel: FavoritesViewModel,
+        technologySearchViewModel: TechnologySearchViewModel
     ) {
         _addPodcastViewModel = State(initialValue: addPodcastViewModel)
         _downloadsViewModel = State(initialValue: downloadsViewModel)
         _favoritesViewModel = State(initialValue: favoritesViewModel)
+        _technologySearchViewModel = State(initialValue: technologySearchViewModel)
     }
 
     var body: some View {
@@ -39,23 +42,10 @@ struct RootTabView: View {
                     Label("Baixados", systemImage: "tray.and.arrow.down.fill")
                 }
 
-            SearchPlaceholderView()
+            TechnologySearchView(viewModel: technologySearchViewModel)
                 .tabItem {
                     Label("Buscar", systemImage: "magnifyingglass")
                 }
-        }
-    }
-}
-
-private struct SearchPlaceholderView: View {
-    var body: some View {
-        NavigationStack {
-            ContentUnavailableView(
-                "Buscar",
-                systemImage: "magnifyingglass",
-                description: Text("Procure novos podcasts em breve.")
-            )
-            .navigationTitle("Buscar")
         }
     }
 }
