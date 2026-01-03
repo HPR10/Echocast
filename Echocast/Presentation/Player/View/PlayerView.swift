@@ -143,10 +143,27 @@ private extension PlayerView {
             .frame(maxWidth: .infinity, alignment: .leading)
 
             if let description = viewModel.episode.description, !description.isEmpty {
-                Text(description)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.leading)
+                Menu {
+                    Text(description)
+                        .font(.subheadline)
+                        .foregroundStyle(.primary)
+                        .multilineTextAlignment(.leading)
+                        .padding(.vertical, 4)
+                } label: {
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        Text(description)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.leading)
+                            .lineLimit(3)
+                            .truncationMode(.tail)
+
+                        Image(systemName: "ellipsis")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
             }
         }
     }
@@ -162,8 +179,10 @@ private extension PlayerView {
                 .opacity(0)
         } else if let activeDownload {
             ZStack {
+                glowCircle(size: 40)
+
                 Circle()
-                    .stroke(.gray.opacity(0.2), lineWidth: 2)
+                    .stroke(Color.primary.opacity(0.25), lineWidth: 2)
                     .frame(width: 34, height: 34)
 
                 ProgressView(value: activeDownload.fractionCompleted ?? 0)
@@ -171,13 +190,17 @@ private extension PlayerView {
                     .frame(width: 34, height: 34)
             }
             .animation(.easeInOut, value: activeDownload.fractionCompleted)
+            .foregroundStyle(.primary)
             .accessibilityLabel("Baixando episodio")
         } else if isDownloaded {
-            Image(systemName: "checkmark.circle.fill")
-                .font(.title2.weight(.semibold))
-                .foregroundStyle(.blue)
-                .symbolEffect(.bounce, value: isDownloaded)
-                .accessibilityLabel("Episodio baixado")
+            ZStack {
+                glowCircle(size: 40)
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.title2.weight(.semibold))
+            }
+            .foregroundStyle(.primary)
+            .symbolEffect(.bounce, value: isDownloaded)
+            .accessibilityLabel("Episodio baixado")
         } else {
             Button {
                 Task { @MainActor in
@@ -189,8 +212,12 @@ private extension PlayerView {
                     )
             }
         } label: {
-            Image(systemName: "arrow.down.circle")
-                .font(.title2.weight(.semibold))
+            ZStack {
+                glowCircle(size: 40)
+                Image(systemName: "arrow.down.circle")
+                    .font(.title2.weight(.semibold))
+            }
+            .foregroundStyle(.primary)
         }
             .buttonStyle(.plain)
             .disabled(viewModel.episode.audioURL == nil)
@@ -202,6 +229,13 @@ private extension PlayerView {
         guard let fraction = progress.fractionCompleted else { return nil }
         let percent = Int((fraction * 100).rounded())
         return "\(percent)%"
+    }
+
+    private func glowCircle(size: CGFloat) -> some View {
+        Circle()
+            .fill(Color.primary.opacity(0.18))
+            .frame(width: size, height: size)
+            .blur(radius: 8)
     }
 
     private var favoriteButton: some View {
@@ -291,12 +325,17 @@ private extension PlayerView {
                         }
                     }
                 } label: {
-                    Image(systemName: "ellipsis.circle")
-                        .font(.system(size: 20, weight: .semibold))
-                        .frame(width: 36, height: 36)
-                        .accessibilityLabel("Opcoes de playback")
+                    ZStack {
+                        glowCircle(size: 38)
+                        Image(systemName: "speedometer")
+                            .font(.system(size: 20, weight: .semibold))
+                            .frame(width: 36, height: 36)
+                    }
+                    .foregroundStyle(.primary)
+                    .accessibilityLabel("Opcoes de playback")
                 }
                 .disabled(!viewModel.hasAudio)
+                .tint(.primary)
                 .padding(.trailing, 4)
             }
         }
@@ -305,6 +344,7 @@ private extension PlayerView {
     @ViewBuilder
     var progressSection: some View {
         let maxDuration = max(viewModel.duration, 1)
+        let remainingTime = max(maxDuration - viewModel.currentTime, 0)
 
         VStack(spacing: 8) {
             if viewModel.isBuffering {
@@ -340,7 +380,7 @@ private extension PlayerView {
 
                 Spacer()
 
-                Text(viewModel.durationText)
+                Text("-\(formatTime(remainingTime))")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -353,6 +393,19 @@ private extension PlayerView {
             playbackKey: viewModel.episode.playbackKey
         )
     }
+
+    private func formatTime(_ seconds: TimeInterval) -> String {
+        let value = seconds.isFinite ? max(seconds, 0) : 0
+        return Self.timeFormatter.string(from: value) ?? "0:00"
+    }
+
+    private static let timeFormatter: DateComponentsFormatter = {
+        let formatter = DateComponentsFormatter()
+        formatter.allowedUnits = [.hour, .minute, .second]
+        formatter.zeroFormattingBehavior = [.pad]
+        formatter.unitsStyle = .positional
+        return formatter
+    }()
 }
 
 // MARK: - Previews
