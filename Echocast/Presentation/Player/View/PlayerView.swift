@@ -332,19 +332,12 @@ private extension PlayerView {
                         }
                     }
                 } label: {
-                    HStack(spacing: 4) {
-                        Text(String(format: "%.1fx", viewModel.playbackRate))
-                            .font(.system(size: 13, weight: .semibold, design: .rounded))
-                            .monospacedDigit()
+                    ZStack {
+                        glowCircle(size: 38)
+                        Image(systemName: "speedometer")
+                            .font(.system(size: 20, weight: .semibold))
+                            .frame(width: 36, height: 36)
                     }
-                    .padding(.horizontal, 10)
-                    .frame(height: 28)
-                    .background(
-                        Capsule()
-                            .fill(.ultraThinMaterial)
-                            .overlay(Capsule().stroke(Color.primary.opacity(0.15), lineWidth: 0.5))
-                            .shadow(color: Color.black.opacity(0.18), radius: 10, x: 0, y: 4)
-                    )
                     .foregroundStyle(.primary)
                     .accessibilityLabel("Velocidade de reproducao")
                 }
@@ -698,4 +691,3 @@ private final class PreviewFavoritesRepository: FavoriteEpisodesRepositoryProtoc
     .padding()
 }
 #endif
-
