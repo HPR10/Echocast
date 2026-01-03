@@ -14,6 +14,7 @@ struct PlayerRouteView: View {
     @Environment(FavoritesViewModel.self) private var favoritesViewModel
     let episode: Episode
     let podcastTitle: String
+    let podcastImageURL: URL?
 
     var body: some View {
         let viewModel = playerCoordinator.prepare(
@@ -23,7 +24,8 @@ struct PlayerRouteView: View {
         PlayerView(
             viewModel: viewModel,
             downloadsViewModel: downloadsViewModel,
-            favoritesViewModel: favoritesViewModel
+            favoritesViewModel: favoritesViewModel,
+            podcastImageURL: podcastImageURL
         )
             .onDisappear {
                 playerCoordinator.handleViewDisappear(for: episode)
@@ -35,17 +37,20 @@ struct PlayerView: View {
     let viewModel: PlayerViewModel
     let downloadsViewModel: DownloadsViewModel?
     let favoritesViewModel: FavoritesViewModel?
+    let podcastImageURL: URL?
     @State private var downloadError: String?
     @State private var isFavorite = false
 
     init(
         viewModel: PlayerViewModel,
         downloadsViewModel: DownloadsViewModel? = nil,
-        favoritesViewModel: FavoritesViewModel? = nil
+        favoritesViewModel: FavoritesViewModel? = nil,
+        podcastImageURL: URL? = nil
     ) {
         self.viewModel = viewModel
         self.downloadsViewModel = downloadsViewModel
         self.favoritesViewModel = favoritesViewModel
+        self.podcastImageURL = podcastImageURL
         _downloadError = State(initialValue: nil)
         _isFavorite = State(initialValue: false)
     }
@@ -53,15 +58,27 @@ struct PlayerView: View {
     var body: some View {
         @Bindable var viewModel = viewModel
 
-        VStack(spacing: 24) {
-            headerSection
-            downloadSection
-            progressSection
-            controlSection
-            playbackSection
-            Spacer()
+        GeometryReader { geometry in
+            let bannerSize = min(
+                max(geometry.size.height * 0.25, 170),
+                geometry.size.width * 0.75
+            )
+
+            VStack(spacing: 24) {
+                PodcastArtworkView(
+                    imageURL: podcastImageURL,
+                    size: bannerSize
+                )
+                headerSection
+                downloadSection
+                progressSection
+                controlSection
+                playbackSection
+                Spacer()
+            }
+            .padding()
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
-        .padding()
         .navigationTitle("Player")
         .navigationBarTitleDisplayMode(.inline)
         .alert("Erro", isPresented: .init(
@@ -81,7 +98,6 @@ struct PlayerView: View {
 // MARK: - View Components
 
 private extension PlayerView {
-
     @ViewBuilder
     var downloadSection: some View {
         if let downloadsViewModel {
@@ -327,7 +343,8 @@ private extension PlayerView {
                 ),
                 playerService: MockAudioPlayerService(),
                 resolvePlaybackSourceUseCase: nil
-            )
+            ),
+            podcastImageURL: URL(string: "https://example.com/image.jpg")
         )
     }
 }
