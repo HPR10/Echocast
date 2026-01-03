@@ -329,6 +329,10 @@ private extension PlayerView {
                 .disabled(!viewModel.hasAudio || !viewModel.isSeekable)
             }
             .frame(maxWidth: .infinity)
+            .overlay(alignment: .leading) {
+                shareButton
+                    .padding(.leading, 4)
+            }
             .overlay(alignment: .trailing) {
                 Menu {
                     ForEach(viewModel.availablePlaybackRates, id: \.self) { rate in
@@ -358,6 +362,54 @@ private extension PlayerView {
                 .padding(.trailing, 4)
             }
         }
+    }
+
+    private var shareButton: some View {
+        Group {
+            if let shareData = shareData {
+                ShareLink(
+                    item: shareData.url,
+                    subject: Text("Compartilhar episodio"),
+                    message: Text(shareData.message)
+                ) {
+                    ZStack {
+                        glowCircle(size: 36)
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.system(size: 20, weight: .semibold))
+                            .frame(width: 36, height: 36)
+                    }
+                    .foregroundStyle(.primary)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Compartilhar episodio")
+            } else {
+                Color.clear
+                    .frame(width: 36, height: 36)
+                    .opacity(0)
+            }
+        }
+    }
+
+    private var shareData: (url: URL, message: String)? {
+        if let feedURL = shareFeedURL {
+            let message = "Assine o podcast \(viewModel.podcastTitle) via RSS."
+            return (feedURL, message)
+        }
+
+        guard let audioURL = viewModel.episode.audioURL else { return nil }
+        let message = "Ouça \"\(viewModel.episode.title)\" do podcast \(viewModel.podcastTitle)."
+        return (audioURL, message)
+    }
+
+    private var shareFeedURL: URL? {
+        let key = viewModel.episode.playbackKey
+        let prefix = "podcast:"
+        guard key.hasPrefix(prefix) else { return nil }
+        let remainder = key.dropFirst(prefix.count)
+        guard let separatorIndex = remainder.firstIndex(of: "|") else { return nil }
+        let feedString = remainder[..<separatorIndex]
+        guard !feedString.isEmpty else { return nil }
+        return URL(string: String(feedString))
     }
 
     @ViewBuilder
