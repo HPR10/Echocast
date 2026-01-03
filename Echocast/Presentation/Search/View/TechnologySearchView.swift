@@ -9,6 +9,7 @@ import SwiftUI
 
 struct TechnologySearchView: View {
     @State private var viewModel: TechnologySearchViewModel
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: 12), count: 2)
 
     init(viewModel: TechnologySearchViewModel) {
         _viewModel = State(initialValue: viewModel)
@@ -43,50 +44,38 @@ struct TechnologySearchView: View {
                         description: Text("Toque em atualizar para buscar podcasts de tecnologia.")
                     )
                 } else {
-                    List {
+                    ScrollView {
+                        LazyVGrid(columns: columns, spacing: 12) {
                         ForEach(viewModel.podcasts) { podcast in
-                            HStack(spacing: 12) {
-                                AsyncImage(url: podcast.imageURL) { phase in
-                                    switch phase {
-                                    case let .success(image):
-                                        image
-                                            .resizable()
-                                            .scaledToFill()
-                                    case .empty:
+                            AsyncImage(url: podcast.imageURL) { phase in
+                                switch phase {
+                                case let .success(image):
+                                    image
+                                        .resizable()
+                                        .scaledToFill()
+                                case .empty:
+                                    ZStack {
+                                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                            .fill(.quaternary.opacity(0.2))
                                         ProgressView()
-                                    default:
+                                    }
+                                default:
+                                    ZStack {
+                                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                            .fill(.quaternary.opacity(0.2))
                                         Image(systemName: "waveform")
-                                            .resizable()
-                                            .scaledToFit()
+                                            .font(.title2)
                                             .foregroundStyle(.secondary)
                                     }
-                                }
-                                .frame(width: 60, height: 60)
-                                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                        .stroke(.quaternary, lineWidth: 0.5)
-                                )
-
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(podcast.title)
-                                        .font(.headline)
-                                        .lineLimit(2)
-
-                                    if let author = podcast.author {
-                                        Text(author)
-                                            .font(.subheadline)
-                                            .foregroundStyle(.secondary)
-                                            .lineLimit(1)
-                                    }
-
-                                    Text(podcast.feedURL.absoluteString)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                        .lineLimit(1)
                                 }
                             }
-                            .padding(.vertical, 4)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 140)
+                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .stroke(.quaternary, lineWidth: 0.5)
+                            )
                             .onAppear {
                                 Task {
                                     await viewModel.loadMoreIfNeeded(currentPodcast: podcast)
@@ -94,27 +83,26 @@ struct TechnologySearchView: View {
                             }
                         }
 
-                        if viewModel.isLoadingMore {
-                            HStack {
-                                Spacer()
-                                ProgressView("Carregando mais...")
-                                    .padding(.vertical, 8)
-                                Spacer()
-                            }
-                        } else if viewModel.hasMore {
-                            HStack {
-                                Spacer()
-                                ProgressView()
-                                    .padding(.vertical, 8)
-                                    .opacity(0.01)
-                                Spacer()
-                            }
-                            .onAppear {
-                                Task { await viewModel.loadMore() }
+                            if viewModel.isLoadingMore {
+                                HStack {
+                                    Spacer()
+                                    ProgressView("Carregando mais...")
+                                        .padding(.vertical, 8)
+                                    Spacer()
+                                }
+                                .gridCellColumns(columns.count)
+                            } else if viewModel.hasMore {
+                                Color.clear
+                                    .frame(height: 1)
+                                    .gridCellColumns(columns.count)
+                                    .onAppear {
+                                        Task { await viewModel.loadMore() }
+                                    }
                             }
                         }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
                     }
-                    .listStyle(.insetGrouped)
                     .refreshable {
                         await viewModel.loadPodcasts()
                     }
