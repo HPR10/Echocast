@@ -55,35 +55,39 @@ struct PlayerView: View {
     var body: some View {
         @Bindable var viewModel = viewModel
 
-        GeometryReader { geometry in
-            let bannerSize = min(
-                max(geometry.size.height * 0.25, 170),
-                geometry.size.width * 0.75
-            )
+        ZStack {
+            AppBackgroundView()
 
-            VStack(spacing: 24) {
-                PodcastArtworkView(
-                    imageURL: podcastImageURL,
-                    size: bannerSize
+            GeometryReader { geometry in
+                let bannerSize = min(
+                    max(geometry.size.height * 0.25, 170),
+                    geometry.size.width * 0.75
                 )
-                headerSection
-                progressSection
-                controlSection
-                playbackSection
-                Spacer()
-            }
-            .padding()
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .sheet(isPresented: .init(get: { fullDescriptionText != nil }, set: { if !$0 { fullDescriptionText = nil } })) {
-                ScrollView {
-                    Text(fullDescriptionText ?? "")
-                        .font(.body)
-                        .foregroundStyle(.primary)
-                        .multilineTextAlignment(.leading)
-                        .textSelection(.enabled)
-                        .padding()
+
+                VStack(spacing: 24) {
+                    PodcastArtworkView(
+                        imageURL: podcastImageURL,
+                        size: bannerSize
+                    )
+                    headerSection
+                    progressSection
+                    controlSection
+                    playbackSection
+                    Spacer()
                 }
-                .presentationDetents([.fraction(0.33), .large], selection: $descriptionDetent)
+                .padding()
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .sheet(isPresented: .init(get: { fullDescriptionText != nil }, set: { if !$0 { fullDescriptionText = nil } })) {
+                    ScrollView {
+                        Text(fullDescriptionText ?? "")
+                            .font(.body)
+                            .foregroundStyle(.primary)
+                            .multilineTextAlignment(.leading)
+                            .textSelection(.enabled)
+                            .padding()
+                    }
+                    .presentationDetents([.fraction(0.33), .large], selection: $descriptionDetent)
+                }
             }
         }
         .navigationTitle("Player")

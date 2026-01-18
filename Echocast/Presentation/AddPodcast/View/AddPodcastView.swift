@@ -24,26 +24,30 @@ struct AddPodcastView: View {
 
         NavigationStack(path: $navigationPath) {
             ZStack {
-                VStack(spacing: 16) {
-                    headerView
-                    inputSection
-                    historyList
-                    Spacer()
-                }
-                .opacity(viewModel.isLoading ? 0 : 1)
-                .allowsHitTesting(!viewModel.isLoading)
+                AppBackgroundView()
 
-                if viewModel.isLoading {
-                    loadingOverlay
+                ZStack {
+                    VStack(spacing: 16) {
+                        headerView
+                        inputSection
+                        historyList
+                        Spacer()
+                    }
+                    .opacity(viewModel.isLoading ? 0 : 1)
+                    .allowsHitTesting(!viewModel.isLoading)
+
+                    if viewModel.isLoading {
+                        loadingOverlay
+                    }
                 }
+                .padding()
+                .animation(.easeInOut(duration: 0.2), value: viewModel.isLoading)
             }
-            .padding()
             .navigationDestination(for: Podcast.self) { podcast in
                 PodcastDetailView(
                     viewModel: PodcastDetailViewModel(podcast: podcast)
                 )
             }
-            .animation(.easeInOut(duration: 0.2), value: viewModel.isLoading)
         }
         .onChange(of: viewModel.loadedPodcast) { _, newPodcast in
             if let podcast = newPodcast {

@@ -11,9 +11,13 @@ struct PodcastDetailView: View {
     let viewModel: PodcastDetailViewModel
 
     var body: some View {
-        VStack(spacing: 24) {
-            podcastHeader
-            episodesSection
+        ZStack {
+            AppBackgroundView()
+
+            VStack(spacing: 24) {
+                podcastHeader
+                episodesSection
+            }
         }
         .navigationTitle(viewModel.podcast.title)
         .toolbarTitleDisplayMode(.large)
@@ -72,6 +76,7 @@ private extension PodcastDetailView {
                 }
             }
             .listStyle(.plain)
+            .scrollContentBackground(.hidden)
         }
     }
 }

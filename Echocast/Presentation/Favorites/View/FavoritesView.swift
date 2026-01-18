@@ -18,40 +18,45 @@ struct FavoritesView: View {
         @Bindable var viewModel = viewModel
 
         NavigationStack {
-            Group {
-                if viewModel.favorites.isEmpty {
-                    ContentUnavailableView(
-                        "Favoritos",
-                        systemImage: "star.fill",
-                        description: Text("Adicione episodios aos favoritos para ve-los aqui.")
-                    )
-                } else {
-                    List {
-                        ForEach(viewModel.favorites, id: \.id) { favorite in
-                            NavigationLink {
-                                PlayerRouteView(
-                                    episode: favorite.episode,
-                                    podcastTitle: favorite.podcastTitle,
-                                    podcastImageURL: favorite.podcastImageURL
-                                )
-                            } label: {
-                                FavoriteEpisodeRow(favorite: favorite)
-                            }
-                        }
-                        .onDelete { indexSet in
-                            let favoritesSnapshot = viewModel.favorites
-                            let playbackKeys: [String] = indexSet.compactMap { (index) -> String? in
-                                guard favoritesSnapshot.indices.contains(index) else { return nil }
-                                return favoritesSnapshot[index].playbackKey as String?
-                            }
+            ZStack {
+                AppBackgroundView()
 
-                            Task { @MainActor in
-                                guard !playbackKeys.isEmpty else { return }
-                                await viewModel.remove(playbackKeys: playbackKeys)
+                Group {
+                    if viewModel.favorites.isEmpty {
+                        ContentUnavailableView(
+                            "Favoritos",
+                            systemImage: "star.fill",
+                            description: Text("Adicione episodios aos favoritos para ve-los aqui.")
+                        )
+                    } else {
+                        List {
+                            ForEach(viewModel.favorites, id: \.id) { favorite in
+                                NavigationLink {
+                                    PlayerRouteView(
+                                        episode: favorite.episode,
+                                        podcastTitle: favorite.podcastTitle,
+                                        podcastImageURL: favorite.podcastImageURL
+                                    )
+                                } label: {
+                                    FavoriteEpisodeRow(favorite: favorite)
+                                }
+                            }
+                            .onDelete { indexSet in
+                                let favoritesSnapshot = viewModel.favorites
+                                let playbackKeys: [String] = indexSet.compactMap { (index) -> String? in
+                                    guard favoritesSnapshot.indices.contains(index) else { return nil }
+                                    return favoritesSnapshot[index].playbackKey as String?
+                                }
+
+                                Task { @MainActor in
+                                    guard !playbackKeys.isEmpty else { return }
+                                    await viewModel.remove(playbackKeys: playbackKeys)
+                                }
                             }
                         }
+                        .listStyle(.insetGrouped)
+                        .scrollContentBackground(.hidden)
                     }
-                    .listStyle(.insetGrouped)
                 }
             }
             .navigationTitle("Favoritos")

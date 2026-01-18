@@ -22,77 +22,81 @@ struct TechnologySearchView: View {
         @Bindable var viewModel = viewModel
 
         NavigationStack(path: $navigationPath) {
-            Group {
-                if viewModel.isLoading {
-                    ProgressView("Carregando...")
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .multilineTextAlignment(.center)
-                } else if let error = viewModel.errorMessage {
-                    ContentUnavailableView(
-                        "Erro ao carregar",
-                        systemImage: "exclamationmark.triangle.fill",
-                        description: Text(error)
-                    )
-                    .overlay(alignment: .bottom) {
-                        Button("Tentar novamente") {
-                            Task { await viewModel.loadPodcasts() }
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .padding()
-                    }
-                } else if viewModel.podcasts.isEmpty {
-                    ContentUnavailableView(
-                        "Nada por aqui",
-                        systemImage: "magnifyingglass",
-                        description: Text("Toque em atualizar para buscar podcasts de tecnologia.")
-                    )
-                } else {
-                    ScrollView {
-                        LazyVGrid(columns: columns, spacing: 12) {
-                            ForEach(viewModel.podcasts) { podcast in
-                                Button {
-                                    Task { await viewModel.selectPodcast(podcast) }
-                                } label: {
-                                    artworkView(for: podcast, viewModel: viewModel)
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: 140)
-                                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                            .stroke(.quaternary, lineWidth: 0.5)
-                                    )
-                                }
-                                .buttonStyle(.plain)
-                                .onAppear {
-                                    viewModel.prefetchImages(after: podcast)
-                                    Task {
-                                        await viewModel.loadMoreIfNeeded(currentPodcast: podcast)
-                                    }
-                                }
-                            }
+            ZStack {
+                AppBackgroundView()
 
-                            if viewModel.isLoadingMore {
-                                HStack {
-                                    Spacer()
-                                    ProgressView("Carregando mais...")
-                                        .padding(.vertical, 8)
-                                    Spacer()
-                                }
-                                .gridCellColumns(columns.count)
-                            } else if viewModel.hasMore {
-                                Color.clear
-                                    .frame(height: 1)
-                                    .gridCellColumns(columns.count)
-                                    .onAppear {
-                                        Task { await viewModel.loadMore() }
-                                    }
+                Group {
+                    if viewModel.isLoading {
+                        ProgressView("Carregando...")
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .multilineTextAlignment(.center)
+                    } else if let error = viewModel.errorMessage {
+                        ContentUnavailableView(
+                            "Erro ao carregar",
+                            systemImage: "exclamationmark.triangle.fill",
+                            description: Text(error)
+                        )
+                        .overlay(alignment: .bottom) {
+                            Button("Tentar novamente") {
+                                Task { await viewModel.loadPodcasts() }
                             }
+                            .buttonStyle(.borderedProminent)
+                            .padding()
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
-                    }
-                    .refreshable {
-                        await viewModel.loadPodcasts()
+                    } else if viewModel.podcasts.isEmpty {
+                        ContentUnavailableView(
+                            "Nada por aqui",
+                            systemImage: "magnifyingglass",
+                            description: Text("Toque em atualizar para buscar podcasts de tecnologia.")
+                        )
+                    } else {
+                        ScrollView {
+                            LazyVGrid(columns: columns, spacing: 12) {
+                                ForEach(viewModel.podcasts) { podcast in
+                                    Button {
+                                        Task { await viewModel.selectPodcast(podcast) }
+                                    } label: {
+                                        artworkView(for: podcast, viewModel: viewModel)
+                                        .frame(maxWidth: .infinity)
+                                        .frame(height: 140)
+                                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                                .stroke(.quaternary, lineWidth: 0.5)
+                                        )
+                                    }
+                                    .buttonStyle(.plain)
+                                    .onAppear {
+                                        viewModel.prefetchImages(after: podcast)
+                                        Task {
+                                            await viewModel.loadMoreIfNeeded(currentPodcast: podcast)
+                                        }
+                                    }
+                                }
+
+                                if viewModel.isLoadingMore {
+                                    HStack {
+                                        Spacer()
+                                        ProgressView("Carregando mais...")
+                                            .padding(.vertical, 8)
+                                        Spacer()
+                                    }
+                                    .gridCellColumns(columns.count)
+                                } else if viewModel.hasMore {
+                                    Color.clear
+                                        .frame(height: 1)
+                                        .gridCellColumns(columns.count)
+                                        .onAppear {
+                                            Task { await viewModel.loadMore() }
+                                        }
+                                }
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                        }
+                        .refreshable {
+                            await viewModel.loadPodcasts()
+                        }
                     }
                 }
             }
