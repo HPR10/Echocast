@@ -27,27 +27,67 @@ struct RootTabView: View {
     }
 
     var body: some View {
-        TabView {
-            StudyFlowView(viewModel: studyFlowViewModel)
-                .tabItem {
-                    Label("Estudo", systemImage: "graduationcap.fill")
+        if #available(iOS 18.0, *) {
+            TabView {
+                Tab("Estudo", systemImage: "graduationcap.fill") {
+                    studyContent
                 }
 
-            AddPodcastView(viewModel: addPodcastViewModel)
-                .tabItem {
-                    Label("Início", systemImage: "house.fill")
+                Tab("Início", systemImage: "house.fill") {
+                    addContent
                 }
 
-            FavoritesView(viewModel: favoritesViewModel)
-                .tabItem {
-                    Label("Favoritos", systemImage: "star.fill")
+                Tab("Favoritos", systemImage: "star.fill") {
+                    favoritesContent
                 }
 
-            TechnologySearchView(viewModel: technologySearchViewModel)
-                .tabItem {
-                    Label("Buscar", systemImage: "magnifyingglass")
+                Tab("Buscar", systemImage: "magnifyingglass", role: .search) {
+                    searchContent
                 }
+            }
+        } else {
+            TabView {
+                studyContent
+                    .tabItem {
+                        Label("Estudo", systemImage: "graduationcap.fill")
+                    }
+
+                addContent
+                    .tabItem {
+                        Label("Início", systemImage: "house.fill")
+                    }
+
+                favoritesContent
+                    .tabItem {
+                        Label("Favoritos", systemImage: "star.fill")
+                    }
+
+                searchContent
+                    .tabItem {
+                        Label("Buscar", systemImage: "magnifyingglass")
+                    }
+            }
         }
+    }
+
+    @ViewBuilder
+    private var studyContent: some View {
+        StudyFlowView(viewModel: studyFlowViewModel)
+    }
+
+    @ViewBuilder
+    private var addContent: some View {
+        AddPodcastView(viewModel: addPodcastViewModel)
+    }
+
+    @ViewBuilder
+    private var favoritesContent: some View {
+        FavoritesView(viewModel: favoritesViewModel)
+    }
+
+    @ViewBuilder
+    private var searchContent: some View {
+        TechnologySearchView(viewModel: technologySearchViewModel)
     }
 }
 
