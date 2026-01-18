@@ -12,7 +12,6 @@ import Observation
 struct AddPodcastView: View {
     @State private var viewModel: AddPodcastViewModel
     @State private var navigationPath = NavigationPath()
-    @State private var showClearCacheConfirmation = false
     @Query(sort: \FeedHistoryItem.addedAt, order: .reverse) private var feedHistory: [FeedHistoryItem]
     @Query private var podcasts: [PodcastEntity]
 
@@ -44,14 +43,6 @@ struct AddPodcastView: View {
                     viewModel: PodcastDetailViewModel(podcast: podcast)
                 )
             }
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Limpar cache") {
-                        showClearCacheConfirmation = true
-                    }
-                    .disabled(viewModel.isLoading)
-                }
-            }
             .animation(.easeInOut(duration: 0.2), value: viewModel.isLoading)
         }
         .onChange(of: viewModel.loadedPodcast) { _, newPodcast in
@@ -70,20 +61,6 @@ struct AddPodcastView: View {
             Button("OK") { }
         } message: {
             Text(viewModel.errorMessage ?? "")
-        }
-        .confirmationDialog(
-            "Limpar cache de RSS e imagens?",
-            isPresented: $showClearCacheConfirmation,
-            titleVisibility: .visible
-        ) {
-            Button("Limpar", role: .destructive) {
-                Task {
-                    await viewModel.clearCache()
-                }
-            }
-            Button("Cancelar", role: .cancel) { }
-        } message: {
-            Text("Remove os caches e força uma nova busca do feed.")
         }
     }
 }
@@ -276,12 +253,6 @@ extension AddPodcastView {
                     feedService: MockFeedService()
                 ),
                 repository: MockPodcastRepository()
-            ),
-            clearFeedCacheUseCase: ClearFeedCacheUseCase(
-                feedService: MockFeedService()
-            ),
-            clearImageCacheUseCase: ClearImageCacheUseCase(
-                imageCacheService: MockImageCacheService()
             )
         )
     )
@@ -322,12 +293,6 @@ extension AddPodcastView {
                     feedService: MockFeedService()
                 ),
                 repository: MockPodcastRepository()
-            ),
-            clearFeedCacheUseCase: ClearFeedCacheUseCase(
-                feedService: MockFeedService()
-            ),
-            clearImageCacheUseCase: ClearImageCacheUseCase(
-                imageCacheService: MockImageCacheService()
             )
         )
     )
@@ -354,12 +319,6 @@ extension AddPodcastView {
                         feedService: MockFeedService()
                     ),
                     repository: MockPodcastRepository()
-                ),
-                clearFeedCacheUseCase: ClearFeedCacheUseCase(
-                    feedService: MockFeedService()
-                ),
-                clearImageCacheUseCase: ClearImageCacheUseCase(
-                    imageCacheService: MockImageCacheService()
                 )
             )
             viewModel.inputText = "http://podcast"
@@ -435,12 +394,6 @@ extension AddPodcastView {
                         feedService: MockFeedService()
                     ),
                     repository: MockPodcastRepository()
-                ),
-                clearFeedCacheUseCase: ClearFeedCacheUseCase(
-                    feedService: MockFeedService()
-                ),
-                clearImageCacheUseCase: ClearImageCacheUseCase(
-                    imageCacheService: MockImageCacheService()
                 )
             )
             viewModel.inputText = "https://feeds.simplecast.com/54nAGcIl"
@@ -509,12 +462,6 @@ extension AddPodcastView {
                     feedService: MockFeedService()
                 ),
                 repository: MockPodcastRepository()
-            ),
-            clearFeedCacheUseCase: ClearFeedCacheUseCase(
-                feedService: MockFeedService()
-            ),
-            clearImageCacheUseCase: ClearImageCacheUseCase(
-                imageCacheService: MockImageCacheService()
             )
         )
     )
@@ -541,12 +488,6 @@ extension AddPodcastView {
                     feedService: MockFeedService()
                 ),
                 repository: MockPodcastRepository()
-            ),
-            clearFeedCacheUseCase: ClearFeedCacheUseCase(
-                feedService: MockFeedService()
-            ),
-            clearImageCacheUseCase: ClearImageCacheUseCase(
-                imageCacheService: MockImageCacheService()
             )
         )
     )

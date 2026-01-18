@@ -68,12 +68,6 @@ struct EchocastApp: App {
                 syncPodcastUseCase: SyncPodcastFeedUseCase(
                     loadPodcastUseCase: loadPodcastUseCase,
                     repository: podcastRepository
-                ),
-                clearFeedCacheUseCase: ClearFeedCacheUseCase(
-                    feedService: feedService
-                ),
-                clearImageCacheUseCase: ClearImageCacheUseCase(
-                    imageCacheService: imageCacheService
                 )
             )
             self.playbackProgressUseCase = playbackProgressUseCase

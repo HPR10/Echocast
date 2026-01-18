@@ -13,8 +13,6 @@ import Observation
 final class AddPodcastViewModel {
     private let manageHistoryUseCase: ManageFeedHistoryUseCase
     private let syncPodcastUseCase: SyncPodcastFeedUseCase
-    private let clearFeedCacheUseCase: ClearFeedCacheUseCase
-    private let clearImageCacheUseCase: ClearImageCacheUseCase
     private var loadTask: Task<Void, Never>?
     private var activeLoadID: UUID?
 
@@ -25,14 +23,10 @@ final class AddPodcastViewModel {
 
     init(
         manageHistoryUseCase: ManageFeedHistoryUseCase,
-        syncPodcastUseCase: SyncPodcastFeedUseCase,
-        clearFeedCacheUseCase: ClearFeedCacheUseCase,
-        clearImageCacheUseCase: ClearImageCacheUseCase
+        syncPodcastUseCase: SyncPodcastFeedUseCase
     ) {
         self.manageHistoryUseCase = manageHistoryUseCase
         self.syncPodcastUseCase = syncPodcastUseCase
-        self.clearFeedCacheUseCase = clearFeedCacheUseCase
-        self.clearImageCacheUseCase = clearImageCacheUseCase
     }
 
     func loadFeed() {
@@ -54,11 +48,6 @@ final class AddPodcastViewModel {
         loadTask = nil
         activeLoadID = nil
         isLoading = false
-    }
-
-    func clearCache() async {
-        await clearFeedCacheUseCase.execute()
-        await clearImageCacheUseCase.execute()
     }
 
     func removeFromHistory(url: String) async {
