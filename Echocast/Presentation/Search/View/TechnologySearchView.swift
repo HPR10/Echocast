@@ -60,10 +60,7 @@ struct TechnologySearchView: View {
                                         .frame(maxWidth: .infinity)
                                         .frame(height: 140)
                                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                                .stroke(.quaternary, lineWidth: 0.5)
-                                        )
+                                        .appCardStyle()
                                     }
                                     .buttonStyle(.plain)
                                     .onAppear {
