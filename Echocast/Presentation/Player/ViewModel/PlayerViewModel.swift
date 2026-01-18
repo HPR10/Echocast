@@ -15,7 +15,6 @@ final class PlayerViewModel {
     let podcastTitle: String
     private let manageProgressUseCase: ManagePlaybackProgressUseCase
     private let playerService: AudioPlayerServiceProtocol
-    private let resolvePlaybackSourceUseCase: ResolvePlaybackSourceUseCase?
     private var stateTask: Task<Void, Never>?
     private var eventTask: Task<Void, Never>?
     private var pendingResumeTime: TimeInterval?
@@ -52,14 +51,12 @@ final class PlayerViewModel {
         episode: Episode,
         podcastTitle: String,
         manageProgressUseCase: ManagePlaybackProgressUseCase,
-        playerService: AudioPlayerServiceProtocol,
-        resolvePlaybackSourceUseCase: ResolvePlaybackSourceUseCase?
+        playerService: AudioPlayerServiceProtocol
     ) {
         self.episode = episode
         self.podcastTitle = podcastTitle
         self.manageProgressUseCase = manageProgressUseCase
         self.playerService = playerService
-        self.resolvePlaybackSourceUseCase = resolvePlaybackSourceUseCase
         if let feedDuration = episode.duration, feedDuration > 0 {
             self.duration = feedDuration
         }
@@ -271,27 +268,17 @@ final class PlayerViewModel {
     }
 
     private func preparePlayback() async {
-        let source: PlaybackSource
-        if let resolver = resolvePlaybackSourceUseCase {
-            do {
-                source = try await resolver.execute(for: episode)
-            } catch {
-                errorMessage = (error as? DownloadError)?.errorDescription ?? error.localizedDescription
-                return
-            }
-        } else if let url = episode.audioURL {
-            source = .remote(url)
-        } else {
-            errorMessage = DownloadError.missingAudioURL.errorDescription
+        guard let url = episode.audioURL else {
+            errorMessage = PlayerError.audioUnavailable.errorDescription
             return
         }
 
-        playbackURL = source.url
+        playbackURL = url
         let resolvedEpisode = Episode(
             id: episode.id,
             title: episode.title,
             description: episode.description,
-            audioURL: playbackURL,
+            audioURL: url,
             duration: episode.duration,
             publishedAt: episode.publishedAt,
             playbackKey: episode.playbackKey
@@ -361,17 +348,14 @@ final class PlayerViewModel {
 final class PlayerCoordinator {
     private let manageProgressUseCase: ManagePlaybackProgressUseCase
     private let playerService: AudioPlayerServiceProtocol
-    private let resolvePlaybackSourceUseCase: ResolvePlaybackSourceUseCase?
     private(set) var viewModel: PlayerViewModel?
 
     init(
         manageProgressUseCase: ManagePlaybackProgressUseCase,
-        playerService: AudioPlayerServiceProtocol,
-        resolvePlaybackSourceUseCase: ResolvePlaybackSourceUseCase?
+        playerService: AudioPlayerServiceProtocol
     ) {
         self.manageProgressUseCase = manageProgressUseCase
         self.playerService = playerService
-        self.resolvePlaybackSourceUseCase = resolvePlaybackSourceUseCase
     }
 
     func prepare(episode: Episode, podcastTitle: String) -> PlayerViewModel {
@@ -384,8 +368,7 @@ final class PlayerCoordinator {
             episode: episode,
             podcastTitle: podcastTitle,
             manageProgressUseCase: manageProgressUseCase,
-            playerService: playerService,
-            resolvePlaybackSourceUseCase: resolvePlaybackSourceUseCase
+            playerService: playerService
         )
         viewModel = nextViewModel
         return nextViewModel

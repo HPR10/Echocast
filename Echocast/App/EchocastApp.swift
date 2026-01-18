@@ -15,7 +15,6 @@ struct EchocastApp: App {
     let playbackProgressUseCase: ManagePlaybackProgressUseCase
     let audioPlayerService: AudioPlayerService
     let playerCoordinator: PlayerCoordinator
-    let downloadsViewModel: DownloadsViewModel
     let favoritesViewModel: FavoritesViewModel
     let technologySearchViewModel: TechnologySearchViewModel
 
@@ -25,7 +24,6 @@ struct EchocastApp: App {
                 for: FeedHistoryItem.self,
                 PodcastEntity.self,
                 EpisodeEntity.self,
-                DownloadedEpisodeEntity.self,
                 FavoriteEpisodeEntity.self
             )
             let feedService = FeedService()
@@ -42,44 +40,11 @@ struct EchocastApp: App {
                     modelContext: container.mainContext
                 )
             )
-            let downloadedFileProvider = DownloadedFileProvider()
-            let downloadedEpisodesRepository = DownloadedEpisodesRepository(
-                modelContext: container.mainContext,
-                timeToLive: 30 * 24 * 60 * 60,
-                fileProvider: downloadedFileProvider
-            )
-            let downloadService = EpisodeDownloadService(
-                repository: downloadedEpisodesRepository,
-                fileProvider: downloadedFileProvider
-            )
             let podcastDiscoveryService = ApplePodcastDiscoveryService()
-            let enqueueDownloadUseCase = EnqueueEpisodeDownloadUseCase(
-                downloadService: downloadService,
-                repository: downloadedEpisodesRepository
-            )
-            let observeDownloadProgressUseCase = ObserveDownloadProgressUseCase(
-                downloadService: downloadService
-            )
-            let listDownloadedEpisodesUseCase = ListDownloadedEpisodesUseCase(
-                repository: downloadedEpisodesRepository
-            )
-            let deleteDownloadedEpisodeUseCase = DeleteDownloadedEpisodeUseCase(
-                downloadService: downloadService,
-                repository: downloadedEpisodesRepository
-            )
-            let resolvePlaybackSourceUseCase = ResolvePlaybackSourceUseCase(
-                repository: downloadedEpisodesRepository
-            )
             let manageFavoriteEpisodesUseCase = ManageFavoriteEpisodesUseCase(
                 repository: FavoriteEpisodesRepository(
                     modelContext: container.mainContext
                 )
-            )
-            downloadsViewModel = DownloadsViewModel(
-                listUseCase: listDownloadedEpisodesUseCase,
-                observeProgressUseCase: observeDownloadProgressUseCase,
-                deleteUseCase: deleteDownloadedEpisodeUseCase,
-                enqueueUseCase: enqueueDownloadUseCase
             )
             favoritesViewModel = FavoritesViewModel(
                 manageFavoritesUseCase: manageFavoriteEpisodesUseCase
@@ -115,8 +80,7 @@ struct EchocastApp: App {
             self.audioPlayerService = audioPlayerService
             playerCoordinator = PlayerCoordinator(
                 manageProgressUseCase: playbackProgressUseCase,
-                playerService: audioPlayerService,
-                resolvePlaybackSourceUseCase: resolvePlaybackSourceUseCase
+                playerService: audioPlayerService
             )
         } catch {
             fatalError("Failed to create ModelContainer: \(error)")
@@ -127,12 +91,10 @@ struct EchocastApp: App {
         WindowGroup {
             RootTabView(
                 addPodcastViewModel: addPodcastViewModel,
-                downloadsViewModel: downloadsViewModel,
                 favoritesViewModel: favoritesViewModel,
                 technologySearchViewModel: technologySearchViewModel
             )
             .environment(playerCoordinator)
-            .environment(downloadsViewModel)
             .environment(favoritesViewModel)
         }
         .modelContainer(container)

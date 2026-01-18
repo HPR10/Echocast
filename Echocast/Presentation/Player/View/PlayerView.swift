@@ -10,7 +10,6 @@ import Observation
 
 struct PlayerRouteView: View {
     @Environment(PlayerCoordinator.self) private var playerCoordinator
-    @Environment(DownloadsViewModel.self) private var downloadsViewModel
     @Environment(FavoritesViewModel.self) private var favoritesViewModel
     let episode: Episode
     let podcastTitle: String
@@ -23,7 +22,6 @@ struct PlayerRouteView: View {
         )
         PlayerView(
             viewModel: viewModel,
-            downloadsViewModel: downloadsViewModel,
             favoritesViewModel: favoritesViewModel,
             podcastImageURL: podcastImageURL
         )
@@ -35,10 +33,8 @@ struct PlayerRouteView: View {
 
 struct PlayerView: View {
     let viewModel: PlayerViewModel
-    let downloadsViewModel: DownloadsViewModel?
     let favoritesViewModel: FavoritesViewModel?
     let podcastImageURL: URL?
-    @State private var downloadError: String?
     @State private var isFavorite = false
     @State private var fullDescriptionText: String? = nil
     @State private var descriptionDetent: PresentationDetent = .fraction(0.33)
@@ -47,15 +43,12 @@ struct PlayerView: View {
 
     init(
         viewModel: PlayerViewModel,
-        downloadsViewModel: DownloadsViewModel? = nil,
         favoritesViewModel: FavoritesViewModel? = nil,
         podcastImageURL: URL? = nil
     ) {
         self.viewModel = viewModel
-        self.downloadsViewModel = downloadsViewModel
         self.favoritesViewModel = favoritesViewModel
         self.podcastImageURL = podcastImageURL
-        _downloadError = State(initialValue: nil)
         _isFavorite = State(initialValue: false)
     }
 
@@ -96,12 +89,12 @@ struct PlayerView: View {
         .navigationTitle("Player")
         .navigationBarTitleDisplayMode(.inline)
         .alert("Erro", isPresented: .init(
-            get: { viewModel.errorMessage != nil || downloadError != nil },
-            set: { if !$0 { viewModel.errorMessage = nil; downloadError = nil } }
+            get: { viewModel.errorMessage != nil },
+            set: { if !$0 { viewModel.errorMessage = nil } }
         )) {
             Button("OK") { }
         } message: {
-            Text(viewModel.errorMessage ?? downloadError ?? "")
+            Text(viewModel.errorMessage ?? "")
         }
         .task {
             await loadFavoriteState()
@@ -114,25 +107,8 @@ struct PlayerView: View {
 private extension PlayerView {
     @ViewBuilder
     var headerSection: some View {
-        let playbackKey = viewModel.episode.playbackKey
-        let activeDownload = downloadsViewModel?.activeDownloads
-            .first { $0.playbackKey == playbackKey }
-        let isDownloaded = downloadsViewModel?.downloads
-            .contains { $0.playbackKey == playbackKey } ?? false
-
         VStack(spacing: 8) {
             HStack(spacing: 8) {
-                downloadButton(
-                    activeDownload: activeDownload,
-                    isDownloaded: isDownloaded
-                )
-                if let activeDownload,
-                   let percentLabel = downloadProgressPercentage(for: activeDownload) {
-                    Text(percentLabel)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .transition(.opacity)
-                }
                 Spacer()
                 favoriteButton
             }
@@ -175,69 +151,6 @@ private extension PlayerView {
                 .accessibilityAddTraits(.isButton)
             }
         }
-    }
-
-    @ViewBuilder
-    private func downloadButton(
-        activeDownload: DownloadProgress?,
-        isDownloaded: Bool
-    ) -> some View {
-        if downloadsViewModel == nil {
-            Color.clear
-                .frame(width: 34, height: 34)
-                .opacity(0)
-        } else if let activeDownload {
-            ZStack {
-                glowCircle(size: 40)
-
-                Circle()
-                    .stroke(Color.primary.opacity(0.25), lineWidth: 2)
-                    .frame(width: 34, height: 34)
-
-                ProgressView(value: activeDownload.fractionCompleted ?? 0)
-                    .progressViewStyle(.circular)
-                    .frame(width: 34, height: 34)
-            }
-            .animation(.easeInOut, value: activeDownload.fractionCompleted)
-            .foregroundStyle(.primary)
-            .accessibilityLabel("Baixando episodio")
-        } else if isDownloaded {
-            ZStack {
-                glowCircle(size: 40)
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.title2.weight(.semibold))
-            }
-            .foregroundStyle(.primary)
-            .symbolEffect(.bounce, value: isDownloaded)
-            .accessibilityLabel("Episodio baixado")
-        } else {
-            Button {
-                Task { @MainActor in
-                    guard let downloadsViewModel else { return }
-                    downloadError = await downloadsViewModel.enqueueDownload(
-                        for: viewModel.episode,
-                        podcastTitle: viewModel.podcastTitle,
-                        podcastImageURL: podcastImageURL
-                    )
-            }
-        } label: {
-            ZStack {
-                glowCircle(size: 40)
-                Image(systemName: "arrow.down.circle")
-                    .font(.title2.weight(.semibold))
-            }
-            .foregroundStyle(.primary)
-        }
-            .buttonStyle(.plain)
-            .disabled(viewModel.episode.audioURL == nil)
-            .accessibilityLabel("Baixar episodio")
-        }
-    }
-
-    func downloadProgressPercentage(for progress: DownloadProgress) -> String? {
-        guard let fraction = progress.fractionCompleted else { return nil }
-        let percent = Int((fraction * 100).rounded())
-        return "\(percent)%"
     }
 
     private func glowCircle(size: CGFloat) -> some View {
@@ -516,34 +429,9 @@ private enum PlayerViewPreviewFactory {
             episode: sampleEpisode,
             podcastTitle: samplePodcastTitle,
             manageProgressUseCase: manageProgress,
-            playerService: playerService,
-            resolvePlaybackSourceUseCase: nil
+            playerService: playerService
         )
         return viewModel
-    }
-
-    static func downloadsViewModel(
-        downloads: [DownloadedEpisode],
-        active: [DownloadProgress] = []
-    ) -> DownloadsViewModel {
-        let repository = PreviewDownloadsRepository(downloads: downloads)
-        let service = PreviewDownloadService(active: active)
-        let list = ListDownloadedEpisodesUseCase(repository: repository)
-        let observe = ObserveDownloadProgressUseCase(downloadService: service)
-        let delete = DeleteDownloadedEpisodeUseCase(
-            downloadService: service,
-            repository: repository
-        )
-        let enqueue = EnqueueEpisodeDownloadUseCase(
-            downloadService: service,
-            repository: repository
-        )
-        return DownloadsViewModel(
-            listUseCase: list,
-            observeProgressUseCase: observe,
-            deleteUseCase: delete,
-            enqueueUseCase: enqueue
-        )
     }
 
     static func favoritesViewModel(marked: Bool) -> FavoritesViewModel {
@@ -594,59 +482,6 @@ private final class PreviewAudioPlayerService: AudioPlayerServiceProtocol {
     func teardown() {}
 }
 
-private final class PreviewDownloadsRepository: DownloadedEpisodesRepositoryProtocol {
-    private var items: [DownloadedEpisode]
-
-    init(downloads: [DownloadedEpisode]) {
-        self.items = downloads
-    }
-
-    func fetch(playbackKey: String) async -> DownloadedEpisode? {
-        items.first { $0.playbackKey == playbackKey }
-    }
-
-    func fetchAll() async -> [DownloadedEpisode] {
-        items
-    }
-
-    func save(_ episode: DownloadedEpisode) async {
-        items.removeAll { $0.playbackKey == episode.playbackKey }
-        items.append(episode)
-    }
-
-    func delete(playbackKey: String) async {
-        items.removeAll { $0.playbackKey == playbackKey }
-    }
-
-    func deleteExpired(before date: Date) async {}
-
-    func totalSizeInBytes() async -> Int64 {
-        items.reduce(0) { $0 + $1.fileSize }
-    }
-}
-
-private final class PreviewDownloadService: EpisodeDownloadServiceProtocol {
-    private let active: [DownloadProgress]
-
-    init(active: [DownloadProgress]) {
-        self.active = active
-    }
-
-    func enqueue(_ request: EpisodeDownloadRequest) async throws {}
-    func cancelDownload(for playbackKey: String) async {}
-
-    func observeProgress() -> AsyncStream<DownloadProgress> {
-        AsyncStream { continuation in
-            active.forEach { continuation.yield($0) }
-            continuation.finish()
-        }
-    }
-
-    func activeDownloads() async -> [DownloadProgress] {
-        active
-    }
-}
-
 private final class PreviewFavoritesRepository: FavoriteEpisodesRepositoryProtocol {
     private var items: [FavoriteEpisode]
 
@@ -675,50 +510,6 @@ private final class PreviewFavoritesRepository: FavoriteEpisodesRepositoryProtoc
 #Preview("Playing") {
     PlayerView(
         viewModel: PlayerViewPreviewFactory.playerViewModel(isPlaying: true),
-        downloadsViewModel: nil,
-        favoritesViewModel: PlayerViewPreviewFactory.favoritesViewModel(marked: false),
-        podcastImageURL: PlayerViewPreviewFactory.sampleImage
-    )
-    .padding()
-}
-
-#Preview("Downloaded + Favorite") {
-    let downloads = [
-        DownloadedEpisode(
-            playbackKey: PlayerViewPreviewFactory.sampleEpisode.playbackKey,
-            title: PlayerViewPreviewFactory.sampleEpisode.title,
-            podcastTitle: PlayerViewPreviewFactory.samplePodcastTitle,
-            podcastImageURL: PlayerViewPreviewFactory.sampleImage,
-            audioURL: PlayerViewPreviewFactory.sampleEpisode.audioURL ?? URL(fileURLWithPath: "/tmp/audio.mp3"),
-            localFileURL: URL(fileURLWithPath: "/tmp/audio.mp3"),
-            fileSize: 15_000_000,
-            downloadedAt: .now,
-            expiresAt: nil
-        )
-    ]
-
-    return PlayerView(
-        viewModel: PlayerViewPreviewFactory.playerViewModel(isPlaying: false),
-        downloadsViewModel: PlayerViewPreviewFactory.downloadsViewModel(downloads: downloads),
-        favoritesViewModel: PlayerViewPreviewFactory.favoritesViewModel(marked: true),
-        podcastImageURL: PlayerViewPreviewFactory.sampleImage
-    )
-    .padding()
-}
-
-#Preview("Active Download") {
-    let active = [
-        DownloadProgress(
-            playbackKey: PlayerViewPreviewFactory.sampleEpisode.playbackKey,
-            state: .running,
-            bytesDownloaded: 5_000_000,
-            bytesExpected: 20_000_000
-        )
-    ]
-
-    return PlayerView(
-        viewModel: PlayerViewPreviewFactory.playerViewModel(isPlaying: false),
-        downloadsViewModel: PlayerViewPreviewFactory.downloadsViewModel(downloads: [], active: active),
         favoritesViewModel: PlayerViewPreviewFactory.favoritesViewModel(marked: false),
         podcastImageURL: PlayerViewPreviewFactory.sampleImage
     )
@@ -742,13 +533,11 @@ private final class PreviewFavoritesRepository: FavoriteEpisodesRepositoryProtoc
         episode: episode,
         podcastTitle: "Podcast de Teste",
         manageProgressUseCase: manageProgress,
-        playerService: playerService,
-        resolvePlaybackSourceUseCase: nil
+        playerService: playerService
     )
 
     return PlayerView(
         viewModel: viewModel,
-        downloadsViewModel: nil,
         favoritesViewModel: PlayerViewPreviewFactory.favoritesViewModel(marked: false),
         podcastImageURL: nil
     )

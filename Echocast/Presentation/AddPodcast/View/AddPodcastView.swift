@@ -291,8 +291,7 @@ extension AddPodcastView {
             manageProgressUseCase: ManagePlaybackProgressUseCase(
                 repository: MockPlaybackProgressRepository()
             ),
-            playerService: MockAudioPlayerService(),
-            resolvePlaybackSourceUseCase: nil
+            playerService: MockAudioPlayerService()
         )
     )
 }
@@ -338,8 +337,7 @@ extension AddPodcastView {
             manageProgressUseCase: ManagePlaybackProgressUseCase(
                 repository: MockPlaybackProgressRepository()
             ),
-            playerService: MockAudioPlayerService(),
-            resolvePlaybackSourceUseCase: nil
+            playerService: MockAudioPlayerService()
         )
     )
 }
@@ -527,8 +525,7 @@ extension AddPodcastView {
             manageProgressUseCase: ManagePlaybackProgressUseCase(
                 repository: MockPlaybackProgressRepository()
             ),
-            playerService: MockAudioPlayerService(),
-            resolvePlaybackSourceUseCase: nil
+            playerService: MockAudioPlayerService()
         )
     )
 }
@@ -559,8 +556,7 @@ extension AddPodcastView {
             manageProgressUseCase: ManagePlaybackProgressUseCase(
                 repository: MockPlaybackProgressRepository()
             ),
-            playerService: MockAudioPlayerService(),
-            resolvePlaybackSourceUseCase: nil
+            playerService: MockAudioPlayerService()
         )
     )
 }

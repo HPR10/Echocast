@@ -9,8 +9,6 @@ import SwiftUI
 
 struct PodcastDetailView: View {
     let viewModel: PodcastDetailViewModel
-    @Environment(DownloadsViewModel.self) private var downloadsViewModel
-    @State private var downloadError: String?
 
     var body: some View {
         VStack(spacing: 24) {
@@ -25,14 +23,6 @@ struct PodcastDetailView: View {
                 podcastTitle: viewModel.podcast.title,
                 podcastImageURL: viewModel.podcast.imageURL
             )
-        }
-        .alert("Erro ao baixar", isPresented: .init(
-            get: { downloadError != nil },
-            set: { if !$0 { downloadError = nil } }
-        )) {
-            Button("OK") { }
-        } message: {
-            Text(downloadError ?? "")
         }
     }
 }
@@ -79,20 +69,6 @@ private extension PodcastDetailView {
             List(viewModel.podcast.episodes) { episode in
                 NavigationLink(value: episode) {
                     EpisodeRow(episode: episode)
-                }
-                .swipeActions {
-                    Button {
-                        Task { @MainActor in
-                            downloadError = await downloadsViewModel.enqueueDownload(
-                                for: episode,
-                                podcastTitle: viewModel.podcast.title,
-                                podcastImageURL: viewModel.podcast.imageURL
-                            )
-                        }
-                    } label: {
-                        Label("Baixar", systemImage: "arrow.down.circle")
-                    }
-                    .tint(.blue)
                 }
             }
             .listStyle(.plain)
@@ -172,8 +148,7 @@ private struct EpisodeRow: View {
             manageProgressUseCase: ManagePlaybackProgressUseCase(
                 repository: MockPlaybackProgressRepository()
             ),
-            playerService: MockAudioPlayerService(),
-            resolvePlaybackSourceUseCase: nil
+            playerService: MockAudioPlayerService()
         )
     )
 }
@@ -194,8 +169,7 @@ private struct EpisodeRow: View {
             manageProgressUseCase: ManagePlaybackProgressUseCase(
                 repository: MockPlaybackProgressRepository()
             ),
-            playerService: MockAudioPlayerService(),
-            resolvePlaybackSourceUseCase: nil
+            playerService: MockAudioPlayerService()
         )
     )
 }
