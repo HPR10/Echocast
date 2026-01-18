@@ -115,6 +115,9 @@ private enum RootTabPreviewFactory {
         let loadPodcastUseCase = LoadPodcastFromRSSUseCase(
             feedService: feedService
         )
+        let resolveArtworkUseCase = ResolvePodcastArtworkUseCase(
+            feedService: feedService
+        )
         let podcastRepository = PodcastRepository(
             modelContext: container.mainContext
         )
@@ -143,7 +146,8 @@ private enum RootTabPreviewFactory {
             syncPodcastUseCase: SyncPodcastFeedUseCase(
                 loadPodcastUseCase: loadPodcastUseCase,
                 repository: podcastRepository
-            )
+            ),
+            resolveArtworkUseCase: resolveArtworkUseCase
         )
         let playerCoordinator = PlayerCoordinator(
             manageProgressUseCase: ManagePlaybackProgressUseCase(

@@ -45,8 +45,7 @@ struct PodcastIndexDiscoveryService: PodcastDiscoveryServiceProtocol {
                 return nil
             }
 
-            let imageURLString = feed.artwork ?? feed.image
-            let imageURL = imageURLString.flatMap(URL.init)
+            let imageURL = imageURL(for: feed)
             let identifier = feed.itunesId ?? feed.id
 
             return DiscoveredPodcast(
@@ -83,6 +82,32 @@ struct PodcastIndexDiscoveryService: PodcastDiscoveryServiceProtocol {
         let digest = Insecure.SHA1.hash(data: data)
         return digest.map { String(format: "%02x", $0) }.joined()
     }
+
+    private func imageURL(for feed: PodcastIndexFeed) -> URL? {
+        let candidates = [feed.artwork, feed.image, feed.thumb, feed.favicon]
+
+        for raw in candidates {
+            guard let raw, !raw.isEmpty else { continue }
+            let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { continue }
+            let normalized = normalizedURLString(trimmed)
+            if let url = URL(string: normalized) {
+                return url
+            }
+        }
+
+        return nil
+    }
+
+    private func normalizedURLString(_ value: String) -> String {
+        if value.hasPrefix("//") {
+            return "https:\(value)"
+        }
+        if value.hasPrefix("http://") {
+            return "https://" + value.dropFirst("http://".count)
+        }
+        return value
+    }
 }
 
 private struct SearchResponse: Decodable {
@@ -98,4 +123,6 @@ private struct PodcastIndexFeed: Decodable {
     let url: String?
     let image: String?
     let artwork: String?
+    let thumb: String?
+    let favicon: String?
 }

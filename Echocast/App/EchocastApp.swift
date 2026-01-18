@@ -32,6 +32,9 @@ struct EchocastApp: App {
             let loadPodcastUseCase = LoadPodcastFromRSSUseCase(
                 feedService: feedService
             )
+            let resolveArtworkUseCase = ResolvePodcastArtworkUseCase(
+                feedService: feedService
+            )
             let podcastRepository = PodcastRepository(
                 modelContext: container.mainContext
             )
@@ -59,7 +62,8 @@ struct EchocastApp: App {
                 syncPodcastUseCase: SyncPodcastFeedUseCase(
                     loadPodcastUseCase: loadPodcastUseCase,
                     repository: podcastRepository
-                )
+                ),
+                resolveArtworkUseCase: resolveArtworkUseCase
             )
             let audioPlayerService = AudioPlayerService()
             addPodcastViewModel = AddPodcastViewModel(

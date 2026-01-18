@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import NukeUI
 
 struct TechnologySearchView: View {
     @State private var viewModel: TechnologySearchViewModel
@@ -52,28 +53,7 @@ struct TechnologySearchView: View {
                                 Button {
                                     Task { await viewModel.selectPodcast(podcast) }
                                 } label: {
-                                    AsyncImage(url: podcast.imageURL) { phase in
-                                        switch phase {
-                                        case let .success(image):
-                                            image
-                                                .resizable()
-                                                .scaledToFill()
-                                        case .empty:
-                                            ZStack {
-                                                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                                    .fill(.quaternary.opacity(0.2))
-                                                ProgressView()
-                                            }
-                                        default:
-                                            ZStack {
-                                                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                                    .fill(.quaternary.opacity(0.2))
-                                                Image(systemName: "waveform")
-                                                    .font(.title2)
-                                                    .foregroundStyle(.secondary)
-                                            }
-                                        }
-                                    }
+                                    artworkView(for: podcast, viewModel: viewModel)
                                     .frame(maxWidth: .infinity)
                                     .frame(height: 140)
                                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -84,6 +64,7 @@ struct TechnologySearchView: View {
                                 }
                                 .buttonStyle(.plain)
                                 .onAppear {
+                                    viewModel.prefetchImages(after: podcast)
                                     Task {
                                         await viewModel.loadMoreIfNeeded(currentPodcast: podcast)
                                     }
@@ -152,6 +133,51 @@ struct TechnologySearchView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func artworkView(
+        for podcast: DiscoveredPodcast,
+        viewModel: TechnologySearchViewModel
+    ) -> some View {
+        if viewModel.shouldAttemptArtworkLoad(for: podcast.imageURL) {
+            LazyImage(url: podcast.imageURL) { state in
+                Group {
+                    if let image = state.image {
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    } else if state.isLoading {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(.quaternary.opacity(0.2))
+                            ProgressView()
+                        }
+                    } else {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(.quaternary.opacity(0.2))
+                            Image(systemName: "waveform")
+                                .font(.title2)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                .onChange(of: state.error != nil) { _, hasError in
+                    if hasError {
+                        viewModel.markArtworkLoadFailed(for: podcast.imageURL)
+                    }
+                }
+            }
+        } else {
+            ZStack {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(.quaternary.opacity(0.2))
+                Image(systemName: "waveform")
+                    .font(.title2)
+                    .foregroundStyle(.secondary)
             }
         }
     }
