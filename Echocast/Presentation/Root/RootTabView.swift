@@ -9,15 +9,18 @@ import SwiftUI
 import SwiftData
 
 struct RootTabView: View {
+    @State private var studyFlowViewModel: StudyFlowViewModel
     @State private var addPodcastViewModel: AddPodcastViewModel
     @State private var favoritesViewModel: FavoritesViewModel
     @State private var technologySearchViewModel: TechnologySearchViewModel
 
     init(
+        studyFlowViewModel: StudyFlowViewModel,
         addPodcastViewModel: AddPodcastViewModel,
         favoritesViewModel: FavoritesViewModel,
         technologySearchViewModel: TechnologySearchViewModel
     ) {
+        _studyFlowViewModel = State(initialValue: studyFlowViewModel)
         _addPodcastViewModel = State(initialValue: addPodcastViewModel)
         _favoritesViewModel = State(initialValue: favoritesViewModel)
         _technologySearchViewModel = State(initialValue: technologySearchViewModel)
@@ -25,6 +28,11 @@ struct RootTabView: View {
 
     var body: some View {
         TabView {
+            StudyFlowView(viewModel: studyFlowViewModel)
+                .tabItem {
+                    Label("Estudo", systemImage: "graduationcap.fill")
+                }
+
             AddPodcastView(viewModel: addPodcastViewModel)
                 .tabItem {
                     Label("Início", systemImage: "house.fill")
@@ -72,6 +80,26 @@ private enum RootTabPreviewFactory {
                         title: "Backend em Foco",
                         author: "Tech BR",
                         imageURL: URL(string: "https://example.com/backend.png"),
+                        feedURL: URL(string: "https://rss.art19.com/the-daily")!
+                    )
+                ]
+            }
+
+            func searchPodcasts(matching query: String, limit: Int, offset: Int) async throws -> [DiscoveredPodcast] {
+                guard offset == 0 else { return [] }
+                return [
+                    DiscoveredPodcast(
+                        id: 10,
+                        title: "Arquitetura Dev BR",
+                        author: "Dev BR",
+                        imageURL: URL(string: "https://example.com/arch.png"),
+                        feedURL: URL(string: "https://feeds.simplecast.com/54nAGcIl")!
+                    ),
+                    DiscoveredPodcast(
+                        id: 11,
+                        title: "Backend sem ruído",
+                        author: "Backenders",
+                        imageURL: URL(string: "https://example.com/backend2.png"),
                         feedURL: URL(string: "https://rss.art19.com/the-daily")!
                     )
                 ]
@@ -149,6 +177,14 @@ private enum RootTabPreviewFactory {
             ),
             resolveArtworkUseCase: resolveArtworkUseCase
         )
+        let studyFlowViewModel = StudyFlowViewModel(
+            getCatalogUseCase: GetCuratedCatalogUseCase(
+                repository: CuratedCatalogRepository()
+            ),
+            searchUseCase: SearchPodcastsUseCase(
+                discoveryService: PreviewPodcastDiscoveryService()
+            )
+        )
         let playerCoordinator = PlayerCoordinator(
             manageProgressUseCase: ManagePlaybackProgressUseCase(
                 repository: PlaybackProgressRepository(
@@ -159,6 +195,7 @@ private enum RootTabPreviewFactory {
         )
 
         let view = RootTabView(
+            studyFlowViewModel: studyFlowViewModel,
             addPodcastViewModel: addPodcastViewModel,
             favoritesViewModel: favoritesViewModel,
             technologySearchViewModel: technologySearchViewModel

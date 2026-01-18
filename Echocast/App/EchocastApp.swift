@@ -17,6 +17,7 @@ struct EchocastApp: App {
     let playerCoordinator: PlayerCoordinator
     let favoritesViewModel: FavoritesViewModel
     let technologySearchViewModel: TechnologySearchViewModel
+    let studyFlowViewModel: StudyFlowViewModel
 
     init() {
         do {
@@ -65,6 +66,14 @@ struct EchocastApp: App {
                 ),
                 resolveArtworkUseCase: resolveArtworkUseCase
             )
+            studyFlowViewModel = StudyFlowViewModel(
+                getCatalogUseCase: GetCuratedCatalogUseCase(
+                    repository: CuratedCatalogRepository()
+                ),
+                searchUseCase: SearchPodcastsUseCase(
+                    discoveryService: podcastDiscoveryService
+                )
+            )
             let audioPlayerService = AudioPlayerService()
             addPodcastViewModel = AddPodcastViewModel(
                 manageHistoryUseCase: ManageFeedHistoryUseCase(
@@ -91,6 +100,7 @@ struct EchocastApp: App {
     var body: some Scene {
         WindowGroup {
             RootTabView(
+                studyFlowViewModel: studyFlowViewModel,
                 addPodcastViewModel: addPodcastViewModel,
                 favoritesViewModel: favoritesViewModel,
                 technologySearchViewModel: technologySearchViewModel

@@ -1,0 +1,152 @@
+{
+  "podcasts": [
+    {
+      "id": "hipsters-ponto-tech",
+      "title": "Hipsters Ponto Tech",
+      "author": "Alura - Hipsters Network",
+      "imageURL": null,
+      "feedURL": "https://hipsters.tech/feed/podcast",
+      "themes": ["architecture", "computer_science", "backend"],
+      "levels": ["beginner", "intermediate"],
+      "types": ["conceptual", "practical"]
+    },
+    {
+      "id": "lambda3",
+      "title": "Lambda3 Podcast",
+      "author": "Lambda3",
+      "imageURL": null,
+      "feedURL": "https://anchor.fm/s/1033521c8/podcast/rss",
+      "themes": ["backend", "architecture"],
+      "levels": ["intermediate", "advanced"],
+      "types": ["practical", "conceptual"]
+    },
+    {
+      "id": "data-hackers",
+      "title": "Data Hackers",
+      "author": "Data Hackers",
+      "imageURL": null,
+      "feedURL": "https://anchor.fm/s/6d1ee34/podcast/rss",
+      "themes": ["computer_science"],
+      "levels": ["intermediate", "advanced"],
+      "types": ["practical", "conceptual"]
+    },
+    {
+      "id": "pizza-de-dados",
+      "title": "Pizza de Dados",
+      "author": "Pizza de Dados",
+      "imageURL": null,
+      "feedURL": "https://podcast.pizzadedados.com/feed.xml",
+      "themes": ["computer_science"],
+      "levels": ["beginner", "intermediate"],
+      "types": ["theoretical", "practical"]
+    },
+    {
+      "id": "tecnocast",
+      "title": "Tecnocast",
+      "author": "Tecnoblog",
+      "imageURL": null,
+      "feedURL": "https://anchor.fm/s/1075f6ce0/podcast/rss",
+      "themes": ["computer_science", "architecture"],
+      "levels": ["beginner", "intermediate"],
+      "types": ["conceptual"]
+    },
+    {
+      "id": "podcast-canaltech",
+      "title": "Podcast Canaltech",
+      "author": "Canaltech",
+      "imageURL": null,
+      "feedURL": "https://www.omnycontent.com/d/playlist/8e2ec6fb-1858-4110-9c6f-adb80168a6ab/866d8fb7-bcb0-4891-9e19-adb900df945d/827d466f-d5ef-4e48-a4c6-adb900df9475/podcast.rss",
+      "themes": ["computer_science"],
+      "levels": ["beginner"],
+      "types": ["conceptual"]
+    },
+    {
+      "id": "cabeca-de-lab",
+      "title": "Cabeca de Lab",
+      "author": "Luizalabs",
+      "imageURL": null,
+      "feedURL": "https://anchor.fm/s/a4fe9f8/podcast/rss",
+      "themes": ["career", "architecture"],
+      "levels": ["beginner", "intermediate"],
+      "types": ["career", "conceptual"]
+    },
+    {
+      "id": "ia-sob-controle",
+      "title": "IA Sob Controle",
+      "author": "Alura - Hipsters Network",
+      "imageURL": null,
+      "feedURL": "https://anchor.fm/s/f9fb7ee0/podcast/rss",
+      "themes": ["computer_science"],
+      "levels": ["intermediate", "advanced"],
+      "types": ["conceptual", "practical"]
+    },
+    {
+      "id": "like-a-boss",
+      "title": "Like a Boss",
+      "author": "Alura",
+      "imageURL": null,
+      "feedURL": "https://www.likeaboss.com.br/episodios/feed/like-a-boss",
+      "themes": ["career"],
+      "levels": ["beginner", "intermediate"],
+      "types": ["career", "conceptual"]
+    },
+    {
+      "id": "direito-e-tecnologia",
+      "title": "Direito e Tecnologia",
+      "author": "Direito e Tecnologia",
+      "imageURL": null,
+      "feedURL": "https://anchor.fm/s/7ae2b74/podcast/rss",
+      "themes": ["computer_science"],
+      "levels": ["beginner", "intermediate"],
+      "types": ["conceptual"]
+    }
+  ],
+  "stacks": [
+    {
+      "id": "dev-fundamentos",
+      "title": "Fundamentos de Desenvolvimento",
+      "summary": "Base tecnica e conceitos essenciais de software.",
+      "theme": "computer_science",
+      "level": "beginner",
+      "podcastIDs": [
+        "hipsters-ponto-tech",
+        "tecnocast",
+        "podcast-canaltech"
+      ]
+    },
+    {
+      "id": "backend-essencial",
+      "title": "Backend Essencial",
+      "summary": "Arquitetura, boas praticas e sistemas escalaveis.",
+      "theme": "backend",
+      "level": "intermediate",
+      "podcastIDs": [
+        "lambda3",
+        "hipsters-ponto-tech"
+      ]
+    },
+    {
+      "id": "dados-e-ia",
+      "title": "Dados e IA",
+      "summary": "Ciencia de dados e inteligencia artificial aplicada.",
+      "theme": "computer_science",
+      "level": "intermediate",
+      "podcastIDs": [
+        "data-hackers",
+        "pizza-de-dados",
+        "ia-sob-controle"
+      ]
+    },
+    {
+      "id": "carreira-tech",
+      "title": "Carreira Tech",
+      "summary": "Lideranca, mercado e crescimento profissional.",
+      "theme": "career",
+      "level": "beginner",
+      "podcastIDs": [
+        "like-a-boss",
+        "cabeca-de-lab"
+      ]
+    }
+  ]
+}
