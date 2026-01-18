@@ -7,6 +7,7 @@
 
 import Foundation
 import Observation
+import os
 
 @Observable
 @MainActor
@@ -15,14 +16,12 @@ final class StudyFlowViewModel {
     private let searchUseCase: SearchPodcastsUseCase
     private var loadTask: Task<Void, Never>?
     private var activeLoadID: UUID?
+    private let logger = Logger(subsystem: "Echocast", category: "StudyFlow")
 
     var catalog: CuratedCatalog?
     var searchQuery = ""
-    var submittedQuery: String?
-    var searchResults: [CuratedPodcast] = []
-    var isLoading = false
-    var errorMessage: String?
-    var searchSource: StudySearchSource?
+    var inputErrorMessage: String?
+    var state: StudyFlowState = .idle
 
     init(
         getCatalogUseCase: GetCuratedCatalogUseCase,
@@ -32,27 +31,30 @@ final class StudyFlowViewModel {
         self.searchUseCase = searchUseCase
     }
 
-    func startStudy(limit: Int = 25) async {
+    @discardableResult
+    func startStudy(limit: Int = 25) async -> Bool {
         let trimmedQuery = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedQuery.isEmpty else {
-            errorMessage = "Digite um tema para buscar."
-            return
+            inputErrorMessage = "Digite um tema para buscar."
+            return false
         }
 
+        inputErrorMessage = nil
         let requestID = UUID()
         activeLoadID = requestID
         loadTask?.cancel()
 
-        loadTask = Task { [weak self] in
+        let task = Task { [weak self] in
             await self?.performSearch(requestID: requestID, query: trimmedQuery, limit: limit)
         }
+        loadTask = task
+        await task.value
+        return true
     }
 
     func clearResults() {
-        searchResults = []
-        submittedQuery = nil
-        searchSource = nil
-        errorMessage = nil
+        state = .idle
+        inputErrorMessage = nil
     }
 
     private func isActive(_ requestID: UUID) -> Bool {
@@ -60,14 +62,12 @@ final class StudyFlowViewModel {
     }
 
     private func performSearch(requestID: UUID, query: String, limit: Int) async {
-        isLoading = true
-        errorMessage = nil
-        searchSource = nil
-        submittedQuery = query
+        state = .loading
 
         defer {
-            if activeLoadID == requestID {
-                isLoading = false
+            guard activeLoadID == requestID else { return }
+            if case .loading = state {
+                state = .idle
             }
         }
 
@@ -76,14 +76,14 @@ final class StudyFlowViewModel {
             guard isActive(requestID) else { return }
             let mapped = remote.map(Self.mapDiscoveredPodcast)
             if !mapped.isEmpty {
-                searchResults = mapped
-                searchSource = .remote
+                state = .loaded(results: mapped, query: query, source: .remote)
                 return
             }
         } catch is CancellationError {
             return
         } catch {
             if !isActive(requestID) { return }
+            logger.error("Falha na busca remota: \(String(describing: error))")
         }
 
         do {
@@ -91,16 +91,17 @@ final class StudyFlowViewModel {
             guard isActive(requestID) else { return }
             self.catalog = catalog
             let fallback = filterLocalCatalog(catalog, query: query)
-            searchResults = fallback
-            searchSource = .curated
             if fallback.isEmpty {
-                errorMessage = "Nenhum podcast encontrado para esse tema."
+                state = .empty(query: query, source: .curated)
+            } else {
+                state = .loaded(results: fallback, query: query, source: .curated)
             }
         } catch is CancellationError {
             return
         } catch {
             if isActive(requestID) {
-                errorMessage = "Não foi possível carregar a curadoria agora."
+                logger.error("Falha ao carregar curadoria: \(String(describing: error))")
+                state = .error("Não foi possível carregar a curadoria agora.")
             }
         }
     }
@@ -140,7 +141,15 @@ final class StudyFlowViewModel {
     }
 }
 
-enum StudySearchSource: String, Sendable {
+enum StudySearchSource: String, Sendable, Equatable {
     case remote
     case curated
+}
+
+enum StudyFlowState: Equatable {
+    case idle
+    case loading
+    case loaded(results: [CuratedPodcast], query: String, source: StudySearchSource)
+    case empty(query: String, source: StudySearchSource)
+    case error(String)
 }

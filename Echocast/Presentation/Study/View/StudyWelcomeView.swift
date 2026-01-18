@@ -26,6 +26,13 @@ struct StudyWelcomeView: View {
         self.onContinue = onContinue
     }
 
+    private var isLoading: Bool {
+        if case .loading = viewModel.state {
+            return true
+        }
+        return false
+    }
+
     var body: some View {
         @Bindable var viewModel = viewModel
 
@@ -66,28 +73,23 @@ struct StudyWelcomeView: View {
                     }
                     .appCardStyle()
 
-                    if let errorMessage = viewModel.errorMessage {
+                    if let errorMessage = viewModel.inputErrorMessage {
                         Text(errorMessage)
                             .font(AppTypography.meta)
                             .foregroundStyle(.red)
                     }
 
                     Button {
-                        let trimmed = viewModel.searchQuery
-                            .trimmingCharacters(in: .whitespacesAndNewlines)
-                        guard !trimmed.isEmpty else {
-                            viewModel.errorMessage = "Digite um tema para buscar."
-                            return
-                        }
                         viewModel.clearResults()
                         Task {
-                            await viewModel.startStudy()
-                            onContinue()
+                            if await viewModel.startStudy() {
+                                onContinue()
+                            }
                         }
                     } label: {
                         HStack {
                             Text("Preparar meu estudo")
-                            if viewModel.isLoading {
+                            if isLoading {
                                 ProgressView()
                                     .controlSize(.small)
                             }
@@ -95,7 +97,7 @@ struct StudyWelcomeView: View {
                         .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderedProminent)
-                    .disabled(viewModel.isLoading)
+                    .disabled(isLoading)
 
                     if !isFirstRun {
                         Text("Dica: você pode buscar por temas, tecnologias ou áreas específicas.")

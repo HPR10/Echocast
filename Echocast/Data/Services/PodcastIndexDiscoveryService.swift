@@ -28,40 +28,48 @@ struct PodcastIndexDiscoveryService: PodcastDiscoveryServiceProtocol {
 
     func fetchTechnologyPodcasts(limit: Int, offset: Int) async throws -> [DiscoveredPodcast] {
         guard offset == 0 else { return [] }
-        guard let request = buildRequest(limit: limit) else { return [] }
+        guard let request = buildRequest(
+            endpoint: "https://api.podcastindex.org/api/1.0/podcasts/trending",
+            queryItems: [URLQueryItem(name: "max", value: String(limit))]
+        ) else { return [] }
 
-        let (data, response) = try await session.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse,
-              (200...299).contains(httpResponse.statusCode) else {
-            throw URLError(.badServerResponse)
-        }
-
-        let decoded = try JSONDecoder().decode(SearchResponse.self, from: data)
-        let feeds = decoded.feeds ?? []
-
-        return feeds.compactMap { feed in
-            guard let feedURLString = feed.url,
-                  let feedURL = URL(string: feedURLString) else {
-                return nil
-            }
-
-            let imageURL = imageURL(for: feed)
-            let identifier = feed.itunesId ?? feed.id
-
-            return DiscoveredPodcast(
-                id: identifier,
-                title: feed.title,
-                author: feed.author ?? feed.ownerName,
-                imageURL: imageURL,
-                feedURL: feedURL
-            )
-        }
+        return try await fetchPodcasts(request: request)
     }
 
     func searchPodcasts(matching query: String, limit: Int, offset: Int) async throws -> [DiscoveredPodcast] {
         guard offset == 0 else { return [] }
-        guard let request = buildSearchRequest(query: query, limit: limit) else { return [] }
+        guard let request = buildRequest(
+            endpoint: "https://api.podcastindex.org/api/1.0/search/byterm",
+            queryItems: [
+                URLQueryItem(name: "q", value: query),
+                URLQueryItem(name: "max", value: String(limit))
+            ]
+        ) else { return [] }
 
+        return try await fetchPodcasts(request: request)
+    }
+
+    private func buildRequest(endpoint: String, queryItems: [URLQueryItem]) -> URLRequest? {
+        var components = URLComponents(string: endpoint)
+        components?.queryItems = queryItems
+        guard let url = components?.url else { return nil }
+        return authorizedRequest(url: url)
+    }
+
+    private func authorizedRequest(url: URL) -> URLRequest {
+        let timestamp = String(Int(Date().timeIntervalSince1970))
+        let tokenSource = apiKey + apiSecret + timestamp
+        let token = sha1(tokenSource)
+
+        var request = URLRequest(url: url)
+        request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
+        request.setValue(apiKey, forHTTPHeaderField: "X-Auth-Key")
+        request.setValue(timestamp, forHTTPHeaderField: "X-Auth-Date")
+        request.setValue(token, forHTTPHeaderField: "Authorization")
+        return request
+    }
+
+    private func fetchPodcasts(request: URLRequest) async throws -> [DiscoveredPodcast] {
         let (data, response) = try await session.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse,
               (200...299).contains(httpResponse.statusCode) else {
@@ -70,63 +78,25 @@ struct PodcastIndexDiscoveryService: PodcastDiscoveryServiceProtocol {
 
         let decoded = try JSONDecoder().decode(SearchResponse.self, from: data)
         let feeds = decoded.feeds ?? []
+        return feeds.compactMap(mapFeed)
+    }
 
-        return feeds.compactMap { feed in
-            guard let feedURLString = feed.url,
-                  let feedURL = URL(string: feedURLString) else {
-                return nil
-            }
-
-            let imageURL = imageURL(for: feed)
-            let identifier = feed.itunesId ?? feed.id
-
-            return DiscoveredPodcast(
-                id: identifier,
-                title: feed.title,
-                author: feed.author ?? feed.ownerName,
-                imageURL: imageURL,
-                feedURL: feedURL
-            )
+    private func mapFeed(_ feed: PodcastIndexFeed) -> DiscoveredPodcast? {
+        guard let feedURLString = feed.url,
+              let feedURL = URL(string: feedURLString) else {
+            return nil
         }
-    }
 
-    private func buildRequest(limit: Int) -> URLRequest? {
-        var components = URLComponents(string: "https://api.podcastindex.org/api/1.0/podcasts/trending")
-        components?.queryItems = [
-            URLQueryItem(name: "max", value: String(limit))
-        ]
-        guard let url = components?.url else { return nil }
+        let imageURL = imageURL(for: feed)
+        let identifier = feed.itunesId ?? feed.id
 
-        let timestamp = String(Int(Date().timeIntervalSince1970))
-        let tokenSource = apiKey + apiSecret + timestamp
-        let token = sha1(tokenSource)
-
-        var request = URLRequest(url: url)
-        request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
-        request.setValue(apiKey, forHTTPHeaderField: "X-Auth-Key")
-        request.setValue(timestamp, forHTTPHeaderField: "X-Auth-Date")
-        request.setValue(token, forHTTPHeaderField: "Authorization")
-        return request
-    }
-
-    private func buildSearchRequest(query: String, limit: Int) -> URLRequest? {
-        var components = URLComponents(string: "https://api.podcastindex.org/api/1.0/search/byterm")
-        components?.queryItems = [
-            URLQueryItem(name: "q", value: query),
-            URLQueryItem(name: "max", value: String(limit))
-        ]
-        guard let url = components?.url else { return nil }
-
-        let timestamp = String(Int(Date().timeIntervalSince1970))
-        let tokenSource = apiKey + apiSecret + timestamp
-        let token = sha1(tokenSource)
-
-        var request = URLRequest(url: url)
-        request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
-        request.setValue(apiKey, forHTTPHeaderField: "X-Auth-Key")
-        request.setValue(timestamp, forHTTPHeaderField: "X-Auth-Date")
-        request.setValue(token, forHTTPHeaderField: "Authorization")
-        return request
+        return DiscoveredPodcast(
+            id: identifier,
+            title: feed.title,
+            author: feed.author ?? feed.ownerName,
+            imageURL: imageURL,
+            feedURL: feedURL
+        )
     }
 
     private func sha1(_ value: String) -> String {

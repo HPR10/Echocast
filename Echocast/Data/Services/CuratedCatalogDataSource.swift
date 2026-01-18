@@ -9,7 +9,7 @@ import Foundation
 
 enum CuratedCatalogDataSourceError: Error {
     case resourceNotFound
-    case invalidData
+    case invalidData(underlying: Error)
 }
 
 struct CuratedCatalogDataSource {
@@ -29,7 +29,7 @@ struct CuratedCatalogDataSource {
         do {
             return try JSONDecoder().decode(CuratedCatalogRecord.self, from: data)
         } catch {
-            throw CuratedCatalogDataSourceError.invalidData
+            throw CuratedCatalogDataSourceError.invalidData(underlying: error)
         }
     }
 }
