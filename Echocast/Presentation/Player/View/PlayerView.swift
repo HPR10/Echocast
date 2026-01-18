@@ -507,7 +507,7 @@ private final class PreviewFavoritesRepository: FavoriteEpisodesRepositoryProtoc
     }
 }
 
-#Preview("Playing") {
+#Preview("Player (isolado) - Playing") {
     PlayerView(
         viewModel: PlayerViewPreviewFactory.playerViewModel(isPlaying: true),
         favoritesViewModel: PlayerViewPreviewFactory.favoritesViewModel(marked: false),
@@ -516,7 +516,7 @@ private final class PreviewFavoritesRepository: FavoriteEpisodesRepositoryProtoc
     .padding()
 }
 
-#Preview("Sem Audio / Placeholder") {
+#Preview("Player (isolado) - Sem audio / placeholder") {
     let episode = Episode(
         title: "Episodio sem audio",
         description: nil,

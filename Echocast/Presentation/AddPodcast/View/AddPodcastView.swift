@@ -242,7 +242,7 @@ extension AddPodcastView {
 
 // MARK: - Previews
 
-#Preview("Estado Vazio") {
+#Preview("AddPodcast - Estado vazio") {
     AddPodcastView(
         viewModel: AddPodcastViewModel(
             manageHistoryUseCase: ManageFeedHistoryUseCase(
@@ -267,7 +267,7 @@ extension AddPodcastView {
     )
 }
 
-#Preview("Com Histórico") {
+#Preview("AddPodcast - Com histórico") {
     let container = try! ModelContainer(
         for: FeedHistoryItem.self,
         configurations: ModelConfiguration(isStoredInMemoryOnly: true)
@@ -307,7 +307,7 @@ extension AddPodcastView {
     )
 }
 
-#Preview("URL Inválida") {
+#Preview("AddPodcast - URL inválida") {
     struct InvalidURLPreview: View {
         @State private var viewModel: AddPodcastViewModel = {
             let viewModel = AddPodcastViewModel(
@@ -382,7 +382,7 @@ extension AddPodcastView {
     return InvalidURLPreview()
 }
 
-#Preview("URL Válida") {
+#Preview("AddPodcast - URL válida") {
     struct ValidURLPreview: View {
         @State private var viewModel: AddPodcastViewModel = {
             let viewModel = AddPodcastViewModel(
@@ -451,7 +451,7 @@ extension AddPodcastView {
     return ValidURLPreview()
 }
 
-#Preview("Dark Mode") {
+#Preview("AddPodcast - Dark mode") {
     AddPodcastView(
         viewModel: AddPodcastViewModel(
             manageHistoryUseCase: ManageFeedHistoryUseCase(
@@ -477,7 +477,7 @@ extension AddPodcastView {
     )
 }
 
-#Preview("Landscape", traits: .landscapeLeft) {
+#Preview("AddPodcast - Landscape", traits: .landscapeLeft) {
     AddPodcastView(
         viewModel: AddPodcastViewModel(
             manageHistoryUseCase: ManageFeedHistoryUseCase(

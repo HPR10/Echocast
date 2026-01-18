@@ -41,7 +41,7 @@ struct PodcastArtworkView: View {
     }
 }
 
-#Preview {
+#Preview("Artwork (isolado)") {
     PodcastArtworkView(
         imageURL: URL(string: "https://example.com/artwork.jpg"),
         size: 200

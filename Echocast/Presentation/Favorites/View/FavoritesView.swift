@@ -107,3 +107,79 @@ private struct FavoriteEpisodeRow: View {
         return formatter.string(from: seconds) ?? ""
     }
 }
+
+// MARK: - Previews
+
+#Preview("Favoritos - Com dados") {
+    FavoritesPreviewFactory.make()
+}
+
+@MainActor
+private enum FavoritesPreviewFactory {
+    static func make() -> some View {
+        let sampleFavorites = [
+            FavoriteEpisode(
+                playbackKey: "preview-1",
+                title: "Clean Architecture na prática",
+                podcastTitle: "Tech BR",
+                podcastImageURL: URL(string: "https://example.com/backend.png"),
+                summary: "Resumo rápido sobre camadas e casos de uso.",
+                audioURL: URL(string: "https://example.com/episode.mp3"),
+                duration: 2_700,
+                publishedAt: Date().addingTimeInterval(-86_400),
+                addedAt: Date().addingTimeInterval(-3_600)
+            ),
+            FavoriteEpisode(
+                playbackKey: "preview-2",
+                title: "SwiftUI avançado",
+                podcastTitle: "Swift Talks",
+                podcastImageURL: URL(string: "https://example.com/swift.png"),
+                summary: "Discussão sobre performance e arquitetura em SwiftUI.",
+                audioURL: URL(string: "https://example.com/episode2.mp3"),
+                duration: 3_600,
+                publishedAt: Date().addingTimeInterval(-172_800),
+                addedAt: Date()
+            )
+        ]
+        let favoritesViewModel = FavoritesViewModel(
+            manageFavoritesUseCase: ManageFavoriteEpisodesUseCase(
+                repository: PreviewFavoriteEpisodesRepository(items: sampleFavorites)
+            )
+        )
+        let playerCoordinator = PlayerCoordinator(
+            manageProgressUseCase: ManagePlaybackProgressUseCase(
+                repository: MockPlaybackProgressRepository()
+            ),
+            playerService: MockAudioPlayerService()
+        )
+
+        return FavoritesView(viewModel: favoritesViewModel)
+            .environment(favoritesViewModel)
+            .environment(playerCoordinator)
+    }
+}
+
+private final class PreviewFavoriteEpisodesRepository: FavoriteEpisodesRepositoryProtocol {
+    private var items: [FavoriteEpisode]
+
+    init(items: [FavoriteEpisode]) {
+        self.items = items
+    }
+
+    func list() async -> [FavoriteEpisode] {
+        items
+    }
+
+    func save(_ episode: FavoriteEpisode) async {
+        items.removeAll { $0.playbackKey == episode.playbackKey }
+        items.append(episode)
+    }
+
+    func remove(playbackKey: String) async {
+        items.removeAll { $0.playbackKey == playbackKey }
+    }
+
+    func exists(playbackKey: String) async -> Bool {
+        items.contains { $0.playbackKey == playbackKey }
+    }
+}

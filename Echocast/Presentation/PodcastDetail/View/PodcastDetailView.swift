@@ -125,7 +125,7 @@ private struct EpisodeRow: View {
 
 // MARK: - Previews
 
-#Preview("Com Podcast") {
+#Preview("PodcastDetail (isolado) - Com podcast") {
     NavigationStack {
         PodcastDetailView(
             viewModel: PodcastDetailViewModel(
@@ -153,7 +153,7 @@ private struct EpisodeRow: View {
     )
 }
 
-#Preview("Sem Episodios") {
+#Preview("PodcastDetail (isolado) - Sem episodios") {
     NavigationStack {
         PodcastDetailView(
             viewModel: PodcastDetailViewModel(
