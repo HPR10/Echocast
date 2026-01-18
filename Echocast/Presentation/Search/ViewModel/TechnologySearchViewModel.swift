@@ -13,9 +13,9 @@ import Observation
 final class TechnologySearchViewModel {
     private let fetchUseCase: FetchTechnologyPodcastsUseCase
     private let syncPodcastUseCase: SyncPodcastFeedUseCase
-    private let pageSize = 25
+    private let pageIncrement = 20
 
-    private var nextOffset = 0
+    private var currentMax = 20
     private var canLoadMore = true
 
     var podcasts: [DiscoveredPodcast] = []
@@ -46,13 +46,13 @@ final class TechnologySearchViewModel {
         isLoadingMore = false
         errorMessage = nil
         canLoadMore = true
-        nextOffset = 0
+        currentMax = pageIncrement
 
         do {
-            let firstPage = try await fetchUseCase.execute(limit: pageSize, offset: nextOffset)
-            podcasts = firstPage
-            nextOffset = firstPage.count
-            canLoadMore = !firstPage.isEmpty
+            let fetched = try await fetchUseCase.execute(limit: currentMax, offset: 0)
+            let unique = Self.uniquePodcasts(from: fetched)
+            podcasts = unique
+            canLoadMore = !unique.isEmpty
         } catch {
             podcasts = []
             canLoadMore = false
@@ -73,19 +73,25 @@ final class TechnologySearchViewModel {
         isLoadingMore = true
         defer { isLoadingMore = false }
 
+        currentMax += pageIncrement
+
         do {
-            let page = try await fetchUseCase.execute(limit: pageSize, offset: nextOffset)
-            guard !page.isEmpty else {
+            let fetched = try await fetchUseCase.execute(limit: currentMax, offset: 0)
+            let unique = Self.uniquePodcasts(from: fetched)
+            guard unique.count > podcasts.count else {
                 canLoadMore = false
                 return
             }
-
-            podcasts.append(contentsOf: page)
-            nextOffset = podcasts.count
+            podcasts = unique
             canLoadMore = true
         } catch {
-            // Keep canLoadMore true to allow retry when reaching the end again.
+            // Keep canLoadMore true to allow retry on next scroll.
         }
+    }
+
+    private static func uniquePodcasts(from podcasts: [DiscoveredPodcast]) -> [DiscoveredPodcast] {
+        var seen = Set<Int>()
+        return podcasts.filter { seen.insert($0.id).inserted }
     }
 
     func selectPodcast(_ discoveredPodcast: DiscoveredPodcast) async {

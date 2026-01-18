@@ -40,7 +40,10 @@ struct EchocastApp: App {
                     modelContext: container.mainContext
                 )
             )
-            let podcastDiscoveryService = ApplePodcastDiscoveryService()
+            let podcastDiscoveryService = PodcastIndexDiscoveryService(
+                apiKey: "Q8GJUAQFZSVEF8MNH6KE",
+                apiSecret: "kDFc3KAPNMJ5F^ZBDVh4C^xCebmag#QC2fjr6Yhf"
+            )
             let manageFavoriteEpisodesUseCase = ManageFavoriteEpisodesUseCase(
                 repository: FavoriteEpisodesRepository(
                     modelContext: container.mainContext
