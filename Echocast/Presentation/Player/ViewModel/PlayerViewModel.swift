@@ -349,6 +349,7 @@ final class PlayerCoordinator {
     private let manageProgressUseCase: ManagePlaybackProgressUseCase
     private let playerService: AudioPlayerServiceProtocol
     private(set) var viewModel: PlayerViewModel?
+    private(set) var podcastImageURL: URL?
 
     init(
         manageProgressUseCase: ManagePlaybackProgressUseCase,
@@ -358,8 +359,13 @@ final class PlayerCoordinator {
         self.playerService = playerService
     }
 
-    func prepare(episode: Episode, podcastTitle: String) -> PlayerViewModel {
+    func prepare(
+        episode: Episode,
+        podcastTitle: String,
+        podcastImageURL: URL? = nil
+    ) -> PlayerViewModel {
         if let viewModel, viewModel.episode.playbackKey == episode.playbackKey {
+            self.podcastImageURL = podcastImageURL
             return viewModel
         }
 
@@ -371,12 +377,14 @@ final class PlayerCoordinator {
             playerService: playerService
         )
         viewModel = nextViewModel
+        self.podcastImageURL = podcastImageURL
         return nextViewModel
     }
 
     func stopPlayback() {
         viewModel?.teardown()
         viewModel = nil
+        podcastImageURL = nil
     }
 
     func handleViewDisappear(for episode: Episode) {
@@ -384,5 +392,6 @@ final class PlayerCoordinator {
         guard !viewModel.isPlaying, !viewModel.isBuffering else { return }
         viewModel.teardown()
         self.viewModel = nil
+        podcastImageURL = nil
     }
 }

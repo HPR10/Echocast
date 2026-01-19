@@ -18,7 +18,8 @@ struct PlayerRouteView: View {
     var body: some View {
         let viewModel = playerCoordinator.prepare(
             episode: episode,
-            podcastTitle: podcastTitle
+            podcastTitle: podcastTitle,
+            podcastImageURL: podcastImageURL
         )
         PlayerView(
             viewModel: viewModel,

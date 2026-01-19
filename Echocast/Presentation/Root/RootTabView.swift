@@ -9,12 +9,14 @@ import SwiftUI
 import SwiftData
 
 struct RootTabView: View {
+    @Environment(PlayerCoordinator.self) private var playerCoordinator
     @State private var studyFlowViewModel: StudyFlowViewModel
     @State private var addPodcastViewModel: AddPodcastViewModel
     @State private var favoritesViewModel: FavoritesViewModel
     @State private var technologySearchViewModel: TechnologySearchViewModel
     @State private var selectedTab: TabIdentifier = .study
     @State private var searchQuery = ""
+    @State private var isPresentingPlayer = false
 
     private enum TabIdentifier: Hashable {
         case study
@@ -40,6 +42,15 @@ struct RootTabView: View {
             modernTabView
                 .tabViewBottomAccessory {
                     bottomAccessory
+                }
+                .sheet(isPresented: $isPresentingPlayer) {
+                if let viewModel = playerCoordinator.viewModel {
+                    PlayerView(
+                        viewModel: viewModel,
+                        favoritesViewModel: favoritesViewModel,
+                        podcastImageURL: playerCoordinator.podcastImageURL
+                    )
+                }
                 }
         } else if #available(iOS 18.0, *) {
             modernTabView
@@ -97,18 +108,21 @@ struct RootTabView: View {
 
     @ViewBuilder
     private var bottomAccessory: some View {
-        let content = Text("Texto da barra inferior")
-            .font(AppTypography.meta)
-            .foregroundStyle(.primary)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 6)
+        if let viewModel = playerCoordinator.viewModel {
+            let accessory = MiniPlayerAccessoryView(
+                viewModel: viewModel,
+                podcastImageURL: playerCoordinator.podcastImageURL
+            ) {
+                isPresentingPlayer = true
+            }
 
-        if #available(iOS 26.0, *) {
-            content
-                .glassEffect(.regular, in: .capsule)
-        } else {
-            content
-                .background(.ultraThinMaterial, in: Capsule())
+            if #available(iOS 26.0, *) {
+                accessory
+                    .glassEffect(.regular.interactive(), in: .capsule)
+            } else {
+                accessory
+                    .background(.ultraThinMaterial, in: Capsule())
+            }
         }
     }
 
