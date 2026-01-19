@@ -133,7 +133,7 @@ struct TechnologySearchView: View {
                         ProgressView()
                             .controlSize(.large)
                         Text("Carregando podcast...")
-                            .font(.subheadline)
+                            .font(AppTypography.body)
                             .foregroundStyle(.secondary)
                     }
                 }

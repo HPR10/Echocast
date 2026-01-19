@@ -73,17 +73,17 @@ private struct FavoriteEpisodeRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(favorite.title)
-                .font(.headline)
+                .font(AppTypography.title)
                 .lineLimit(2)
 
             Text(favorite.podcastTitle)
-                .font(.subheadline)
+                .font(AppTypography.body)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
 
             if let summary = favorite.summary, !summary.isEmpty {
                 Text(summary)
-                    .font(.caption)
+                    .font(AppTypography.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
             }
@@ -91,13 +91,13 @@ private struct FavoriteEpisodeRow: View {
             HStack(spacing: 8) {
                 if let publishedAt = favorite.publishedAt {
                     Text(publishedAt, style: .date)
-                        .font(.caption)
+                        .font(AppTypography.caption)
                         .foregroundStyle(.secondary)
                 }
 
                 if let duration = favorite.duration {
                     Text(formatDuration(duration))
-                        .font(.caption)
+                        .font(AppTypography.caption)
                         .foregroundStyle(.secondary)
                 }
             }

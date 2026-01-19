@@ -28,10 +28,10 @@ struct StudyResultsView: View {
                         ProgressView()
                             .controlSize(.large)
                         Text("Preparando seu estudo...")
-                            .font(.subheadline)
+                            .font(AppTypography.body)
                             .foregroundStyle(.secondary)
                         Text("Buscando podcasts relevantes para você.")
-                            .font(.footnote)
+                            .font(AppTypography.meta)
                             .foregroundStyle(.secondary)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -59,11 +59,11 @@ struct StudyResultsView: View {
                         VStack(alignment: .leading, spacing: 12) {
                             if let submittedQuery = viewModel.submittedQuery {
                                 Text("Resultados para \"\(submittedQuery)\"")
-                                    .font(AppStyle.sectionTitleFont)
+                                    .font(AppTypography.sectionTitle)
                             }
                             if viewModel.searchSource == .curated {
                                 Text("Mostrando curadoria local enquanto a busca principal está indisponível.")
-                                    .font(.footnote)
+                                    .font(AppTypography.meta)
                                     .foregroundStyle(.secondary)
                             }
                         }
@@ -79,12 +79,12 @@ struct StudyResultsView: View {
                                         cornerRadius: 16
                                     )
                                     Text(podcast.title)
-                                        .font(AppStyle.cardTitleFont)
+                                        .font(AppTypography.title)
                                         .foregroundStyle(.primary)
                                         .lineLimit(2)
                                     if let author = podcast.author, !author.isEmpty {
                                         Text(author)
-                                            .font(.caption)
+                                            .font(AppTypography.caption)
                                             .foregroundStyle(.secondary)
                                     }
                                 }

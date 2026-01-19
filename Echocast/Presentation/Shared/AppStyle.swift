@@ -20,6 +20,15 @@ enum AppStyle {
     static let cardTitleFont = Font.system(size: 17, weight: .semibold, design: .rounded)
 }
 
+enum AppTypography {
+    static let heroTitle = AppStyle.heroTitleFont
+    static let sectionTitle = AppStyle.sectionTitleFont
+    static let title = AppStyle.cardTitleFont
+    static let body = Font.subheadline
+    static let meta = Font.footnote
+    static let caption = Font.caption
+}
+
 struct AppBackgroundView: View {
     @Environment(\.colorScheme) private var colorScheme
 

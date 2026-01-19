@@ -107,7 +107,7 @@ extension AddPodcastView {
 
         if viewModel.shouldShowError(), let error = viewModel.validationError() {
             Text(error)
-                .font(.caption)
+                .font(AppTypography.caption)
                 .foregroundStyle(.red)
         }
 
@@ -236,7 +236,7 @@ extension AddPodcastView {
                 ProgressView()
                     .controlSize(.large)
                 Text("Carregando...")
-                    .font(.subheadline)
+                    .font(AppTypography.body)
                     .foregroundStyle(.secondary)
             }
             .transition(.opacity)
@@ -356,7 +356,7 @@ extension AddPodcastView {
 
                 if viewModel.shouldShowError(), let error = viewModel.validationError() {
                     Text(error)
-                        .font(.caption)
+                        .font(AppTypography.caption)
                         .foregroundStyle(.red)
                 }
 

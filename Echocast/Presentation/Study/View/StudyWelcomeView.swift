@@ -36,10 +36,10 @@ struct StudyWelcomeView: View {
                 VStack(alignment: .leading, spacing: 20) {
                     VStack(alignment: .leading, spacing: 8) {
                         Text(isFirstRun ? "Seu estudo em áudio começa aqui." : "Escolha seu próximo estudo.")
-                            .font(AppStyle.heroTitleFont)
+                            .font(AppTypography.heroTitle)
                             .foregroundStyle(.primary)
                         Text("Sem ruído, sem distrações. Apenas podcasts técnicos para você evoluir.")
-                            .font(.subheadline)
+                            .font(AppTypography.body)
                             .foregroundStyle(.secondary)
                     }
 
@@ -49,14 +49,14 @@ struct StudyWelcomeView: View {
                             Label("Recomece exatamente de onde parou.", systemImage: "bookmark")
                             Label("Crie hábito de estudo com áudio.", systemImage: "waveform")
                         }
-                        .font(.subheadline)
+                        .font(AppTypography.body)
                         .foregroundStyle(.secondary)
                         .padding(.top, 4)
                     }
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text("O que você quer estudar agora?")
-                            .font(AppStyle.sectionTitleFont)
+                            .font(AppTypography.sectionTitle)
                         TextField("Ex: Swift, backend, arquitetura...", text: $viewModel.searchQuery)
                             .textInputAutocapitalization(.never)
                             .disableAutocorrection(true)
@@ -68,7 +68,7 @@ struct StudyWelcomeView: View {
 
                     if let errorMessage = viewModel.errorMessage {
                         Text(errorMessage)
-                            .font(.footnote)
+                            .font(AppTypography.meta)
                             .foregroundStyle(.red)
                     }
 
@@ -99,7 +99,7 @@ struct StudyWelcomeView: View {
 
                     if !isFirstRun {
                         Text("Dica: você pode buscar por temas, tecnologias ou áreas específicas.")
-                            .font(.footnote)
+                            .font(AppTypography.meta)
                             .foregroundStyle(.secondary)
                     }
                 }

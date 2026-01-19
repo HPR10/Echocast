@@ -119,7 +119,7 @@ private extension PlayerView {
 
             if let publishedAt = viewModel.episode.publishedAt {
                 Text(publishedAt, style: .date)
-                    .font(.subheadline)
+                    .font(AppTypography.body)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .center)
             }
@@ -131,7 +131,7 @@ private extension PlayerView {
                     .multilineTextAlignment(.leading)
 
                 Text(viewModel.podcastTitle)
-                    .font(.subheadline)
+                    .font(AppTypography.body)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.leading)
             }
@@ -140,7 +140,7 @@ private extension PlayerView {
             if let description = viewModel.episode.description, !description.isEmpty {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text(description)
-                        .font(.subheadline)
+                        .font(AppTypography.body)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.leading)
                         .lineLimit(3)
@@ -193,7 +193,7 @@ private extension PlayerView {
     var playbackSection: some View {
         if !viewModel.hasAudio {
             Text("Audio indisponivel para este episodio.")
-                .font(.footnote)
+                .font(AppTypography.meta)
                 .foregroundStyle(.secondary)
         }
     }
@@ -339,7 +339,7 @@ private extension PlayerView {
                 HStack(spacing: 8) {
                     ProgressView()
                     Text(viewModel.bufferingMessage ?? "Carregando...")
-                        .font(.caption)
+                        .font(AppTypography.caption)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.leading)
                 }
@@ -363,13 +363,13 @@ private extension PlayerView {
 
             HStack {
                 Text(viewModel.currentTimeText)
-                    .font(.caption)
+                    .font(AppTypography.caption)
                     .foregroundStyle(.secondary)
 
                 Spacer()
 
                 Text("-\(formatTime(remainingTime))")
-                    .font(.caption)
+                    .font(AppTypography.caption)
                     .foregroundStyle(.secondary)
             }
         }
