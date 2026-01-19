@@ -7,6 +7,11 @@
 
 import Foundation
 
+enum CuratedCatalogRepositoryError: Error {
+    case invalidFeedURL(String)
+    case invalidStack(String)
+}
+
 struct CuratedCatalogRepository: CuratedCatalogRepositoryProtocol {
     private let dataSource: CuratedCatalogDataSource
 
@@ -16,13 +21,15 @@ struct CuratedCatalogRepository: CuratedCatalogRepositoryProtocol {
 
     func fetchCatalog() async throws -> CuratedCatalog {
         let record = try dataSource.loadCatalog()
-        let podcasts = record.podcasts.compactMap(mapPodcast)
-        let stacks = record.stacks.compactMap(mapStack)
+        let podcasts = try record.podcasts.map(mapPodcast)
+        let stacks = try record.stacks.map(mapStack)
         return CuratedCatalog(podcasts: podcasts, stacks: stacks)
     }
 
-    private func mapPodcast(_ record: CuratedPodcastRecord) -> CuratedPodcast? {
-        guard let feedURL = URL(string: record.feedURL) else { return nil }
+    private func mapPodcast(_ record: CuratedPodcastRecord) throws -> CuratedPodcast {
+        guard let feedURL = URL(string: record.feedURL) else {
+            throw CuratedCatalogRepositoryError.invalidFeedURL(record.id)
+        }
         let imageURL = record.imageURL.flatMap(URL.init(string:))
         let themes = Set(record.themes.compactMap(StudyTheme.init(rawValue:)))
         let levels = Set(record.levels.compactMap(StudyLevel.init(rawValue:)))
@@ -40,10 +47,10 @@ struct CuratedCatalogRepository: CuratedCatalogRepositoryProtocol {
         )
     }
 
-    private func mapStack(_ record: StudyStackRecord) -> StudyStack? {
+    private func mapStack(_ record: StudyStackRecord) throws -> StudyStack {
         guard let theme = StudyTheme(rawValue: record.theme),
               let level = StudyLevel(rawValue: record.level) else {
-            return nil
+            throw CuratedCatalogRepositoryError.invalidStack(record.id)
         }
 
         return StudyStack(

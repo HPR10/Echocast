@@ -23,7 +23,8 @@ struct StudyResultsView: View {
             AppBackgroundView()
 
             Group {
-                if viewModel.isLoading {
+                switch viewModel.state {
+                case .loading:
                     VStack(spacing: 12) {
                         ProgressView()
                             .controlSize(.large)
@@ -35,33 +36,33 @@ struct StudyResultsView: View {
                             .foregroundStyle(.secondary)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if let errorMessage = viewModel.errorMessage {
+                case .error(let message):
                     ContentUnavailableView(
                         "Não foi possível carregar",
                         systemImage: "exclamationmark.triangle.fill",
-                        description: Text(errorMessage)
+                        description: Text(message)
                     )
                     .overlay(alignment: .bottom) {
                         Button("Tentar novamente") {
-                            Task { await viewModel.startStudy() }
+                            Task {
+                                await viewModel.startStudy()
+                            }
                         }
                         .buttonStyle(.borderedProminent)
                         .padding(.bottom, 12)
                     }
-                } else if viewModel.searchResults.isEmpty {
+                case .empty:
                     ContentUnavailableView(
                         "Nenhum podcast encontrado",
                         systemImage: "waveform",
                         description: Text("Volte e ajuste o tema para buscar novamente.")
                     )
-                } else {
+                case .loaded(let results, let query, let source):
                     ScrollView {
                         VStack(alignment: .leading, spacing: 12) {
-                            if let submittedQuery = viewModel.submittedQuery {
-                                Text("Resultados para \"\(submittedQuery)\"")
-                                    .font(AppTypography.sectionTitle)
-                            }
-                            if viewModel.searchSource == .curated {
+                            Text("Resultados para \"\(query)\"")
+                                .font(AppTypography.sectionTitle)
+                            if source == .curated {
                                 Text("Mostrando curadoria local enquanto a busca principal está indisponível.")
                                     .font(AppTypography.meta)
                                     .foregroundStyle(.secondary)
@@ -71,7 +72,7 @@ struct StudyResultsView: View {
                         .padding(.horizontal, AppStyle.horizontalPadding)
 
                         LazyVGrid(columns: columns, spacing: 16) {
-                            ForEach(viewModel.searchResults) { podcast in
+                            ForEach(results) { podcast in
                                 VStack(alignment: .leading, spacing: 8) {
                                     PodcastArtworkView(
                                         imageURL: podcast.imageURL,
@@ -95,6 +96,12 @@ struct StudyResultsView: View {
                         .padding(.horizontal, AppStyle.horizontalPadding)
                         .padding(.bottom, 32)
                     }
+                case .idle:
+                    ContentUnavailableView(
+                        "Busque por um tema",
+                        systemImage: "magnifyingglass",
+                        description: Text("Volte para a tela anterior e escolha o que estudar.")
+                    )
                 }
             }
         }
