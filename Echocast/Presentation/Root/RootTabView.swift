@@ -13,6 +13,15 @@ struct RootTabView: View {
     @State private var addPodcastViewModel: AddPodcastViewModel
     @State private var favoritesViewModel: FavoritesViewModel
     @State private var technologySearchViewModel: TechnologySearchViewModel
+    @State private var selectedTab: TabIdentifier = .study
+    @State private var searchQuery = ""
+
+    private enum TabIdentifier: Hashable {
+        case study
+        case add
+        case favorites
+        case search
+    }
 
     init(
         studyFlowViewModel: StudyFlowViewModel,
@@ -27,46 +36,79 @@ struct RootTabView: View {
     }
 
     var body: some View {
-        if #available(iOS 18.0, *) {
-            TabView {
-                Tab("Estudo", systemImage: "graduationcap.fill") {
-                    studyContent
+        if #available(iOS 26.0, *) {
+            modernTabView
+                .tabViewBottomAccessory {
+                    bottomAccessory
                 }
-
-                Tab("Início", systemImage: "house.fill") {
-                    addContent
-                }
-
-                Tab("Favoritos", systemImage: "star.fill") {
-                    favoritesContent
-                }
-
-                Tab("Buscar", systemImage: "magnifyingglass", role: .search) {
-                    searchContent
-                }
-            }
+        } else if #available(iOS 18.0, *) {
+            modernTabView
         } else {
-            TabView {
+            legacyTabView
+        }
+    }
+
+    @ViewBuilder
+    private var modernTabView: some View {
+        TabView(selection: $selectedTab) {
+            Tab("Estudo", systemImage: "graduationcap.fill", value: .study) {
                 studyContent
-                    .tabItem {
-                        Label("Estudo", systemImage: "graduationcap.fill")
-                    }
-
-                addContent
-                    .tabItem {
-                        Label("Início", systemImage: "house.fill")
-                    }
-
-                favoritesContent
-                    .tabItem {
-                        Label("Favoritos", systemImage: "star.fill")
-                    }
-
-                searchContent
-                    .tabItem {
-                        Label("Buscar", systemImage: "magnifyingglass")
-                    }
             }
+
+            Tab("Início", systemImage: "house.fill", value: .add) {
+                addContent
+            }
+
+            Tab("Favoritos", systemImage: "star.fill", value: .favorites) {
+                favoritesContent
+            }
+
+            Tab(value: .search, role: .search) {
+                searchContent
+                    .searchable(text: $searchQuery, prompt: "Buscar")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var legacyTabView: some View {
+        TabView {
+            studyContent
+                .tabItem {
+                    Label("Estudo", systemImage: "graduationcap.fill")
+                }
+
+            addContent
+                .tabItem {
+                    Label("Início", systemImage: "house.fill")
+                }
+
+            favoritesContent
+                .tabItem {
+                    Label("Favoritos", systemImage: "star.fill")
+                }
+
+            searchContent
+                .tabItem {
+                    Label("Buscar", systemImage: "magnifyingglass")
+                }
+        }
+    }
+
+    @ViewBuilder
+    private var bottomAccessory: some View {
+        let content = Text("Texto da barra inferior")
+            .font(AppTypography.meta)
+            .foregroundStyle(.primary)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 6)
+
+        if #available(iOS 26.0, *) {
+            content
+                .glassEffect(.regular, in: .capsule)
+        } else {
+            content
+                .background(.ultraThinMaterial, in: Capsule())
         }
     }
 
