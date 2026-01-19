@@ -46,13 +46,13 @@ private extension PodcastDetailView {
 
             if let author = viewModel.podcast.author {
                 Text(author)
-                    .font(.subheadline)
+                    .font(AppTypography.body)
                     .foregroundStyle(.secondary)
             }
 
             if let description = viewModel.podcast.description {
                 Text(description)
-                    .font(.caption)
+                    .font(AppTypography.caption)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
@@ -89,12 +89,12 @@ private struct EpisodeRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(episode.title)
-                .font(.headline)
+                .font(AppTypography.title)
                 .lineLimit(2)
 
             if let description = episode.description, !description.isEmpty {
                 Text(description)
-                    .font(.subheadline)
+                    .font(AppTypography.body)
                     .foregroundStyle(.secondary)
                     .lineLimit(3)
             }
@@ -102,13 +102,13 @@ private struct EpisodeRow: View {
             HStack(spacing: 8) {
                 if let date = episode.publishedAt {
                     Text(date, style: .date)
-                        .font(.caption)
+                        .font(AppTypography.caption)
                         .foregroundStyle(.secondary)
                 }
 
                 if let duration = episode.duration {
                     Text(formatDuration(duration))
-                        .font(.caption)
+                        .font(AppTypography.caption)
                         .foregroundStyle(.secondary)
                 }
             }
