@@ -50,16 +50,15 @@ struct StudyWelcomeView: View {
                             .foregroundStyle(.secondary)
                     }
 
-                    HStack(spacing: 12) {
-                        Image(systemName: "magnifyingglass")
-                            .foregroundStyle(.secondary)
-                        TextField("Buscar por tema, tecnologia ou podcast", text: $viewModel.searchQuery)
-                            .textInputAutocapitalization(.never)
-                            .disableAutocorrection(true)
-                            .focused($isFocused)
-                            .submitLabel(.search)
-                    }
-                    .appCardStyle()
+                    AppTextField(
+                        placeholder: "Buscar por tema, tecnologia ou podcast",
+                        text: $viewModel.searchQuery,
+                        leadingSystemImage: "magnifyingglass",
+                        textInputAutocapitalization: .never,
+                        autocorrectionDisabled: true,
+                        submitLabel: .search,
+                        focus: $isFocused
+                    )
 
                     if let errorMessage = viewModel.inputErrorMessage {
                         Text(errorMessage)
