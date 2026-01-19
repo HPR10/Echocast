@@ -45,7 +45,8 @@ final class StudyFlowViewModel {
         loadTask?.cancel()
 
         let task = Task { [weak self] in
-            await self?.performSearch(requestID: requestID, query: trimmedQuery, limit: limit)
+            guard let self else { return }
+            await self.performSearch(requestID: requestID, query: trimmedQuery, limit: limit)
         }
         loadTask = task
         await task.value
@@ -65,8 +66,7 @@ final class StudyFlowViewModel {
         state = .loading
 
         defer {
-            guard activeLoadID == requestID else { return }
-            if case .loading = state {
+            if activeLoadID == requestID, case .loading = state {
                 state = .idle
             }
         }
