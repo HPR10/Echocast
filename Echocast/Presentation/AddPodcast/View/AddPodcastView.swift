@@ -69,10 +69,6 @@ struct AddPodcastView: View {
     }
 }
 
-private func inputBorderColor(hasError: Bool) -> Color {
-    hasError ? .red : Color.secondary.opacity(0.35)
-}
-
 // MARK: - View Components
 
 extension AddPodcastView {
@@ -87,23 +83,16 @@ extension AddPodcastView {
     var inputSection: some View {
         @Bindable var viewModel = viewModel
 
-        TextField("URL do RSS", text: $viewModel.inputText)
-            .keyboardType(.URL)
-            .textInputAutocapitalization(.never)
-            .autocorrectionDisabled(true)
-            .textContentType(.URL)
-            .disabled(viewModel.isLoading)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 16)
-            .background(
-                .ultraThinMaterial,
-                in: RoundedRectangle(cornerRadius: 14, style: .continuous)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(inputBorderColor(hasError: viewModel.shouldShowError()), lineWidth: 1)
-            )
-            .shadow(color: Color.black.opacity(0.08), radius: 10, x: 0, y: 4)
+        AppTextField(
+            placeholder: "URL do RSS",
+            text: $viewModel.inputText,
+            keyboardType: .URL,
+            textContentType: .URL,
+            textInputAutocapitalization: .never,
+            autocorrectionDisabled: true,
+            hasError: viewModel.shouldShowError()
+        )
+        .disabled(viewModel.isLoading)
 
         if viewModel.shouldShowError(), let error = viewModel.validationError() {
             Text(error)
@@ -337,22 +326,15 @@ extension AddPodcastView {
                     .font(.title2)
                     .fontWeight(.bold)
 
-                TextField("URL do RSS", text: $viewModel.inputText)
-                    .keyboardType(.URL)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled(true)
-                    .textContentType(.URL)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 16)
-                    .background(
-                        .ultraThinMaterial,
-                        in: RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .stroke(inputBorderColor(hasError: viewModel.shouldShowError()), lineWidth: 1)
-                    )
-                    .shadow(color: Color.black.opacity(0.08), radius: 10, x: 0, y: 4)
+                AppTextField(
+                    placeholder: "URL do RSS",
+                    text: $viewModel.inputText,
+                    keyboardType: .URL,
+                    textContentType: .URL,
+                    textInputAutocapitalization: .never,
+                    autocorrectionDisabled: true,
+                    hasError: viewModel.shouldShowError()
+                )
 
                 if viewModel.shouldShowError(), let error = viewModel.validationError() {
                     Text(error)
@@ -412,22 +394,14 @@ extension AddPodcastView {
                     .font(.title2)
                     .fontWeight(.bold)
 
-                TextField("URL do RSS", text: $viewModel.inputText)
-                    .keyboardType(.URL)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled(true)
-                    .textContentType(.URL)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 16)
-                    .background(
-                        .ultraThinMaterial,
-                        in: RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .stroke(inputBorderColor(hasError: viewModel.shouldShowError()), lineWidth: 1)
-                    )
-                    .shadow(color: Color.black.opacity(0.08), radius: 10, x: 0, y: 4)
+                AppTextField(
+                    placeholder: "URL do RSS",
+                    text: $viewModel.inputText,
+                    keyboardType: .URL,
+                    textContentType: .URL,
+                    textInputAutocapitalization: .never,
+                    autocorrectionDisabled: true
+                )
 
                 Button {
 

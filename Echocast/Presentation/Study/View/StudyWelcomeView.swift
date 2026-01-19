@@ -42,42 +42,47 @@ struct StudyWelcomeView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(isFirstRun ? "Seu estudo em áudio começa aqui." : "Escolha seu próximo estudo.")
+                        Text("Explore conteúdos técnicos")
                             .font(AppTypography.heroTitle)
                             .foregroundStyle(.primary)
-                        Text("Sem ruído, sem distrações. Apenas podcasts técnicos para você evoluir.")
+                        Text("Podcasts técnicos curados para estudo, carreira e evolução profissional.")
                             .font(AppTypography.body)
                             .foregroundStyle(.secondary)
                     }
 
-                    if isFirstRun {
-                        VStack(alignment: .leading, spacing: 10) {
-                            Label("Curadoria focada em tecnologia e carreira dev.", systemImage: "checkmark.seal")
-                            Label("Recomece exatamente de onde parou.", systemImage: "bookmark")
-                            Label("Crie hábito de estudo com áudio.", systemImage: "waveform")
-                        }
-                        .font(AppTypography.body)
-                        .foregroundStyle(.secondary)
-                        .padding(.top, 4)
-                    }
-
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("O que você quer estudar agora?")
-                            .font(AppTypography.sectionTitle)
-                        TextField("Ex: Swift, backend, arquitetura...", text: $viewModel.searchQuery)
-                            .textInputAutocapitalization(.never)
-                            .disableAutocorrection(true)
-                            .focused($isFocused)
-                            .submitLabel(.search)
-                            .padding(.top, 4)
-                    }
-                    .appCardStyle()
+                    AppTextField(
+                        placeholder: "Buscar por tema, tecnologia ou podcast",
+                        text: $viewModel.searchQuery,
+                        leadingSystemImage: "magnifyingglass",
+                        textInputAutocapitalization: .never,
+                        autocorrectionDisabled: true,
+                        submitLabel: .search,
+                        focus: $isFocused
+                    )
 
                     if let errorMessage = viewModel.inputErrorMessage {
                         Text(errorMessage)
                             .font(AppTypography.meta)
                             .foregroundStyle(.red)
                     }
+
+                    VStack(spacing: 12) {
+                        Label("Frontend & UI", systemImage: "laptopcomputer")
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .appCardStyle()
+                        Label("Backend & APIs", systemImage: "server.rack")
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .appCardStyle()
+                        Label("Arquitetura & Sistemas", systemImage: "flowchart")
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .appCardStyle()
+                        Label("Carreira em Tecnologia", systemImage: "briefcase")
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .appCardStyle()
+                    }
+                    .font(AppTypography.title)
+                    .foregroundStyle(.primary)
+                    .labelStyle(.titleAndIcon)
 
                     Button {
                         viewModel.clearResults()
@@ -88,7 +93,7 @@ struct StudyWelcomeView: View {
                         }
                     } label: {
                         HStack {
-                            Text("Preparar meu estudo")
+                            Text("Explorar episódios")
                             if isLoading {
                                 ProgressView()
                                     .controlSize(.small)
@@ -99,11 +104,6 @@ struct StudyWelcomeView: View {
                     .buttonStyle(.borderedProminent)
                     .disabled(isLoading)
 
-                    if !isFirstRun {
-                        Text("Dica: você pode buscar por temas, tecnologias ou áreas específicas.")
-                            .font(AppTypography.meta)
-                            .foregroundStyle(.secondary)
-                    }
                 }
                 .padding(.horizontal, AppStyle.horizontalPadding)
                 .padding(.top, 24)
