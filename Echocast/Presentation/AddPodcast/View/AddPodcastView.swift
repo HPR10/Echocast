@@ -10,6 +10,7 @@ import SwiftData
 import Observation
 
 struct AddPodcastView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @State private var viewModel: AddPodcastViewModel
     @State private var navigationPath = NavigationPath()
     @Query(sort: \FeedHistoryItem.addedAt, order: .reverse) private var feedHistory: [FeedHistoryItem]
@@ -109,7 +110,7 @@ extension AddPodcastView {
                 HStack(spacing: Spacing.space8) {
                     Text("Carregar")
                         .font(Typography.buttonLabel)
-                    Image(systemName: "arrow.right.circle.fill")
+                    Image(systemName: SFSymbols.arrowRightCircleFilled)
                         .imageScale(.medium)
                 }
                 .padding(.horizontal, Spacing.space16)
@@ -129,7 +130,7 @@ extension AddPodcastView {
         if feedHistory.isEmpty {
             ContentUnavailableView(
                 "Nenhum histórico",
-                systemImage: "tray.fill",
+                systemImage: SFSymbols.trayFilled,
             )
         } else {
             List {
@@ -150,7 +151,9 @@ extension AddPodcastView {
                                     artworkByURL: artworkByURL
                                 )
                                 Text(item.url)
-                                    .foregroundStyle(Colors.textPrimary)
+                                    .foregroundStyle(
+                                        Colors.text(.primary, on: .card, scheme: colorScheme)
+                                    )
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                     .lineLimit(1)
                                     .truncationMode(.middle)
@@ -163,7 +166,7 @@ extension AddPodcastView {
                                     await viewModel.removeFromHistory(url: item.url)
                                 }
                             } label: {
-                                Label("Excluir", systemImage: "trash")
+                                Label("Excluir", systemImage: SFSymbols.trash)
                             }
                         }
                     }
@@ -209,8 +212,10 @@ extension AddPodcastView {
     }
 
     private var placeholderIcon: some View {
-        Image(systemName: "dot.radiowaves.left.and.right")
-            .foregroundStyle(Colors.textSecondary)
+        Image(systemName: SFSymbols.radioWaves)
+            .foregroundStyle(
+                Colors.text(.secondary, on: .card, scheme: colorScheme)
+            )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
@@ -225,7 +230,9 @@ extension AddPodcastView {
                     .controlSize(.large)
                 Text("Carregando...")
                     .font(Typography.body)
-                    .foregroundStyle(Colors.textSecondary)
+                    .foregroundStyle(
+                        Colors.text(.secondary, on: .appBackground, scheme: colorScheme)
+                    )
             }
             .transition(.opacity)
         }
@@ -346,7 +353,7 @@ extension AddPodcastView {
                     HStack(spacing: Spacing.space8) {
                         Text("Carregar")
                             .font(Typography.buttonLabel)
-                        Image(systemName: "arrow.right.circle.fill")
+                        Image(systemName: SFSymbols.arrowRightCircleFilled)
                             .imageScale(.medium)
                     }
                     .padding(.horizontal, Spacing.space16)
@@ -406,7 +413,7 @@ extension AddPodcastView {
                     HStack(spacing: Spacing.space8) {
                         Text("Carregar")
                             .font(Typography.buttonLabel)
-                        Image(systemName: "arrow.right.circle.fill")
+                        Image(systemName: SFSymbols.arrowRightCircleFilled)
                             .imageScale(.medium)
                     }
                     .padding(.horizontal, Spacing.space16)

@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct FavoritesView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @State private var viewModel: FavoritesViewModel
 
     init(viewModel: FavoritesViewModel) {
@@ -25,7 +26,7 @@ struct FavoritesView: View {
                     if viewModel.favorites.isEmpty {
                         ContentUnavailableView(
                             "Favoritos",
-                            systemImage: "star.fill",
+                            systemImage: SFSymbols.favoriteFilled,
                             description: Text("Adicione episodios aos favoritos para ve-los aqui.")
                         )
                     } else {
@@ -38,7 +39,10 @@ struct FavoritesView: View {
                                         podcastImageURL: favorite.podcastImageURL
                                     )
                                 } label: {
-                                    FavoriteEpisodeRow(favorite: favorite)
+                                    FavoriteEpisodeRow(
+                                        favorite: favorite,
+                                        colorScheme: colorScheme
+                                    )
                                 }
                             }
                             .onDelete { indexSet in
@@ -69,6 +73,7 @@ struct FavoritesView: View {
 
 private struct FavoriteEpisodeRow: View {
     let favorite: FavoriteEpisode
+    let colorScheme: ColorScheme
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.space6) {
@@ -78,13 +83,17 @@ private struct FavoriteEpisodeRow: View {
 
             Text(favorite.podcastTitle)
                 .font(Typography.body)
-                .foregroundStyle(Colors.textSecondary)
+                .foregroundStyle(
+                    Colors.text(.secondary, on: .card, scheme: colorScheme)
+                )
                 .lineLimit(1)
 
             if let summary = favorite.summary, !summary.isEmpty {
                 Text(summary)
                     .font(Typography.caption)
-                    .foregroundStyle(Colors.textSecondary)
+                    .foregroundStyle(
+                        Colors.text(.secondary, on: .card, scheme: colorScheme)
+                    )
                     .lineLimit(2)
             }
 
@@ -92,13 +101,17 @@ private struct FavoriteEpisodeRow: View {
                 if let publishedAt = favorite.publishedAt {
                     Text(publishedAt, style: .date)
                         .font(Typography.caption)
-                        .foregroundStyle(Colors.textSecondary)
+                        .foregroundStyle(
+                            Colors.text(.secondary, on: .card, scheme: colorScheme)
+                        )
                 }
 
                 if let duration = favorite.duration {
                     Text(formatDuration(duration))
                         .font(Typography.caption)
-                        .foregroundStyle(Colors.textSecondary)
+                        .foregroundStyle(
+                            Colors.text(.secondary, on: .card, scheme: colorScheme)
+                        )
                 }
             }
         }

@@ -62,15 +62,15 @@ struct RootTabView: View {
     @ViewBuilder
     private var modernTabView: some View {
         TabView(selection: $selectedTab) {
-            Tab("Estudo", systemImage: "graduationcap.fill", value: .study) {
+            Tab("Estudo", systemImage: SFSymbols.tabStudy, value: .study) {
                 studyContent
             }
 
-            Tab("Início", systemImage: "house.fill", value: .add) {
+            Tab("Início", systemImage: SFSymbols.tabHome, value: .add) {
                 addContent
             }
 
-            Tab("Favoritos", systemImage: "star.fill", value: .favorites) {
+            Tab("Favoritos", systemImage: SFSymbols.tabFavorites, value: .favorites) {
                 favoritesContent
             }
 
@@ -86,22 +86,22 @@ struct RootTabView: View {
         TabView {
             studyContent
                 .tabItem {
-                    Label("Estudo", systemImage: "graduationcap.fill")
+                    Label("Estudo", systemImage: SFSymbols.tabStudy)
                 }
 
             addContent
                 .tabItem {
-                    Label("Início", systemImage: "house.fill")
+                    Label("Início", systemImage: SFSymbols.tabHome)
                 }
 
             favoritesContent
                 .tabItem {
-                    Label("Favoritos", systemImage: "star.fill")
+                    Label("Favoritos", systemImage: SFSymbols.tabFavorites)
                 }
 
             searchContent
                 .tabItem {
-                    Label("Buscar", systemImage: "magnifyingglass")
+                    Label("Buscar", systemImage: SFSymbols.search)
                 }
         }
     }

@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct PodcastDetailView: View {
+    @Environment(\.colorScheme) private var colorScheme
     let viewModel: PodcastDetailViewModel
 
     var body: some View {
@@ -47,13 +48,17 @@ private extension PodcastDetailView {
             if let author = viewModel.podcast.author {
                 Text(author)
                     .font(Typography.body)
-                    .foregroundStyle(Colors.textSecondary)
+                    .foregroundStyle(
+                        Colors.text(.secondary, on: .appBackground, scheme: colorScheme)
+                    )
             }
 
             if let description = viewModel.podcast.description {
                 Text(description)
                     .font(Typography.caption)
-                    .foregroundStyle(Colors.textSecondary)
+                    .foregroundStyle(
+                        Colors.text(.secondary, on: .appBackground, scheme: colorScheme)
+                    )
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
             }
@@ -66,7 +71,7 @@ private extension PodcastDetailView {
         if viewModel.podcast.episodes.isEmpty {
             ContentUnavailableView(
                 "Nenhum episodio",
-                systemImage: "headphones",
+                systemImage: SFSymbols.headphones,
                 description: Text("Este podcast ainda nao possui episodios")
             )
         } else {
@@ -84,6 +89,7 @@ private extension PodcastDetailView {
 // MARK: - Episode Row
 
 private struct EpisodeRow: View {
+    @Environment(\.colorScheme) private var colorScheme
     let episode: Episode
 
     var body: some View {
@@ -95,7 +101,9 @@ private struct EpisodeRow: View {
             if let description = episode.description, !description.isEmpty {
                 Text(description)
                     .font(Typography.body)
-                    .foregroundStyle(Colors.textSecondary)
+                    .foregroundStyle(
+                        Colors.text(.secondary, on: .card, scheme: colorScheme)
+                    )
                     .lineLimit(3)
             }
 
@@ -103,13 +111,17 @@ private struct EpisodeRow: View {
                 if let date = episode.publishedAt {
                     Text(date, style: .date)
                         .font(Typography.caption)
-                        .foregroundStyle(Colors.textSecondary)
+                        .foregroundStyle(
+                            Colors.text(.secondary, on: .card, scheme: colorScheme)
+                        )
                 }
 
                 if let duration = episode.duration {
                     Text(formatDuration(duration))
                         .font(Typography.caption)
-                        .foregroundStyle(Colors.textSecondary)
+                        .foregroundStyle(
+                            Colors.text(.secondary, on: .card, scheme: colorScheme)
+                        )
                 }
             }
         }

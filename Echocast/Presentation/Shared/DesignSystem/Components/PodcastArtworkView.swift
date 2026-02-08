@@ -34,7 +34,7 @@ struct PodcastArtworkView: View {
         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
             .fill(Colors.surfaceMuted)
             .overlay {
-                Image(systemName: "mic.fill")
+                Image(systemName: SFSymbols.microphoneFilled)
                     .font(.system(size: 48, weight: .semibold))
                     .foregroundStyle(Colors.iconMuted)
             }

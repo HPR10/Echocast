@@ -33,6 +33,7 @@ struct PlayerRouteView: View {
 }
 
 struct PlayerView: View {
+    @Environment(\.colorScheme) private var colorScheme
     let viewModel: PlayerViewModel
     let favoritesViewModel: FavoritesViewModel?
     let podcastImageURL: URL?
@@ -82,7 +83,9 @@ struct PlayerView: View {
                     ScrollView {
                         Text(fullDescriptionText ?? "")
                             .font(Typography.bodyRegular)
-                            .foregroundStyle(Colors.textPrimary)
+                            .foregroundStyle(
+                                Colors.text(.primary, on: .appBackground, scheme: colorScheme)
+                            )
                             .multilineTextAlignment(.leading)
                             .textSelection(.enabled)
                             .padding()
@@ -121,7 +124,9 @@ private extension PlayerView {
             if let publishedAt = viewModel.episode.publishedAt {
                 Text(publishedAt, style: .date)
                     .font(Typography.body)
-                    .foregroundStyle(Colors.textSecondary)
+                    .foregroundStyle(
+                        Colors.text(.secondary, on: .appBackground, scheme: colorScheme)
+                    )
                     .frame(maxWidth: .infinity, alignment: .center)
             }
 
@@ -132,7 +137,9 @@ private extension PlayerView {
 
                 Text(viewModel.podcastTitle)
                     .font(Typography.body)
-                    .foregroundStyle(Colors.textSecondary)
+                    .foregroundStyle(
+                        Colors.text(.secondary, on: .appBackground, scheme: colorScheme)
+                    )
                     .multilineTextAlignment(.leading)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -141,7 +148,9 @@ private extension PlayerView {
                 HStack(alignment: .firstTextBaseline, spacing: Spacing.space6) {
                     Text(description)
                         .font(Typography.body)
-                        .foregroundStyle(Colors.textSecondary)
+                        .foregroundStyle(
+                            Colors.text(.secondary, on: .appBackground, scheme: colorScheme)
+                        )
                         .multilineTextAlignment(.leading)
                         .lineLimit(3)
                         .truncationMode(.tail)
@@ -178,9 +187,13 @@ private extension PlayerView {
                 }
             }
         } label: {
-            Image(systemName: isFavorite ? "star.fill" : "star")
+            Image(systemName: isFavorite ? SFSymbols.favoriteFilled : SFSymbols.favorite)
                 .font(Typography.iconFavorite)
-                .foregroundStyle(isFavorite ? Colors.favoriteActive : Colors.favoriteInactive)
+                .foregroundStyle(
+                    isFavorite
+                        ? Colors.favoriteActive
+                        : Colors.text(.secondary, on: .appBackground, scheme: colorScheme)
+                )
                 .scaleEffect(isFavorite ? 1.1 : 1.0)
                 .symbolEffect(.bounce, value: isFavorite)
                 .accessibilityLabel(isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos")
@@ -194,7 +207,9 @@ private extension PlayerView {
         if !viewModel.hasAudio {
             Text("Audio indisponivel para este episodio.")
                 .font(Typography.meta)
-                .foregroundStyle(Colors.textSecondary)
+                .foregroundStyle(
+                    Colors.text(.secondary, on: .appBackground, scheme: colorScheme)
+                )
         }
     }
 
@@ -208,7 +223,7 @@ private extension PlayerView {
                         backwardRotation -= 360
                     }
                 } label: {
-                    Image(systemName: "gobackward.30")
+                    Image(systemName: SFSymbols.playerSkipBack)
                         .font(Typography.iconTransportSecondary)
                         .frame(
                             width: Size.playerTransportSecondaryWidth,
@@ -224,7 +239,7 @@ private extension PlayerView {
                 Button {
                     viewModel.togglePlayback()
                 } label: {
-                    Image(systemName: viewModel.isPlaying ? "pause.fill" : "play.fill")
+                    Image(systemName: viewModel.isPlaying ? SFSymbols.playerPause : SFSymbols.playerPlay)
                         .font(Typography.iconTransportPrimary)
                         .frame(
                             width: Size.playerTransportPrimaryWidth,
@@ -241,7 +256,7 @@ private extension PlayerView {
                         forwardRotation += 360
                     }
                 } label: {
-                    Image(systemName: "goforward.15")
+                    Image(systemName: SFSymbols.playerSkipForward)
                         .font(Typography.iconTransportSecondary)
                         .frame(
                             width: Size.playerTransportSecondaryWidth,
@@ -268,7 +283,7 @@ private extension PlayerView {
                             HStack {
                                 Text(String(format: "%.2gx", rate))
                                 if rate == viewModel.playbackRate {
-                                    Image(systemName: "checkmark")
+                                    Image(systemName: SFSymbols.checkmark)
                                 }
                             }
                         }
@@ -276,11 +291,13 @@ private extension PlayerView {
                 } label: {
                     ZStack {
                         glowCircle(size: Size.playerSpeedGlow)
-                        Image(systemName: "speedometer")
+                        Image(systemName: SFSymbols.playerSpeed)
                             .font(Typography.iconUtility)
                             .frame(width: Size.playerUtilityButton, height: Size.playerUtilityButton)
                     }
-                    .foregroundStyle(Colors.textPrimary)
+                    .foregroundStyle(
+                        Colors.text(.primary, on: .appBackground, scheme: colorScheme)
+                    )
                     .accessibilityLabel("Velocidade de reproducao")
                 }
                 .disabled(!viewModel.hasAudio)
@@ -300,11 +317,13 @@ private extension PlayerView {
                 ) {
                     ZStack {
                         glowCircle(size: Size.playerShareGlow)
-                        Image(systemName: "square.and.arrow.up")
+                        Image(systemName: SFSymbols.playerShare)
                             .font(Typography.iconUtility)
                             .frame(width: Size.playerUtilityButton, height: Size.playerUtilityButton)
                     }
-                    .foregroundStyle(Colors.textPrimary)
+                    .foregroundStyle(
+                        Colors.text(.primary, on: .appBackground, scheme: colorScheme)
+                    )
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Compartilhar episodio")
@@ -349,7 +368,9 @@ private extension PlayerView {
                     ProgressView()
                     Text(viewModel.bufferingMessage ?? "Carregando...")
                         .font(Typography.caption)
-                        .foregroundStyle(Colors.textSecondary)
+                        .foregroundStyle(
+                            Colors.text(.secondary, on: .appBackground, scheme: colorScheme)
+                        )
                         .multilineTextAlignment(.leading)
                 }
             }
@@ -373,13 +394,17 @@ private extension PlayerView {
             HStack {
                 Text(viewModel.currentTimeText)
                     .font(Typography.caption)
-                    .foregroundStyle(Colors.textSecondary)
+                    .foregroundStyle(
+                        Colors.text(.secondary, on: .appBackground, scheme: colorScheme)
+                    )
 
                 Spacer()
 
                 Text("-\(formatTime(remainingTime))")
                     .font(Typography.caption)
-                    .foregroundStyle(Colors.textSecondary)
+                    .foregroundStyle(
+                        Colors.text(.secondary, on: .appBackground, scheme: colorScheme)
+                    )
             }
         }
     }

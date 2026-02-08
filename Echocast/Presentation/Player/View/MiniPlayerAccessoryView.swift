@@ -9,6 +9,7 @@ import SwiftUI
 import NukeUI
 
 struct MiniPlayerAccessoryView: View {
+    @Environment(\.colorScheme) private var colorScheme
     let viewModel: PlayerViewModel
     let podcastImageURL: URL?
     let onTap: () -> Void
@@ -23,7 +24,9 @@ struct MiniPlayerAccessoryView: View {
 
             Text(viewModel.episode.title)
                 .font(Typography.body)
-                .foregroundStyle(Colors.textPrimary)
+                .foregroundStyle(
+                    Colors.text(.primary, on: .appBackground, scheme: colorScheme)
+                )
                 .lineLimit(1)
 
             Spacer(minLength: Spacing.space8)
@@ -31,7 +34,7 @@ struct MiniPlayerAccessoryView: View {
             Button {
                 viewModel.togglePlayback()
             } label: {
-                Image(systemName: viewModel.isPlaying ? "pause.fill" : "play.fill")
+                Image(systemName: viewModel.isPlaying ? SFSymbols.playerPause : SFSymbols.playerPlay)
                     .font(Typography.iconMiniControl)
                     .frame(width: Size.miniPlayerControl, height: Size.miniPlayerControl)
             }
@@ -63,7 +66,7 @@ private struct MiniArtworkView: View {
                     ZStack {
                         RoundedRectangle(cornerRadius: Spacing.radius8, style: .continuous)
                             .fill(Colors.surfaceMuted)
-                        Image(systemName: "mic.fill")
+                        Image(systemName: SFSymbols.microphoneFilled)
                             .font(Typography.iconMiniPlaceholder)
                             .foregroundStyle(Colors.iconMuted)
                     }

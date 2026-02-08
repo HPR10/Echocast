@@ -9,6 +9,7 @@ import SwiftUI
 import NukeUI
 
 struct TechnologySearchView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @State private var viewModel: TechnologySearchViewModel
     @State private var navigationPath = NavigationPath()
     @State private var isShowingSelectionError = false
@@ -33,7 +34,7 @@ struct TechnologySearchView: View {
                     } else if let error = viewModel.errorMessage {
                         ContentUnavailableView(
                             "Erro ao carregar",
-                            systemImage: "exclamationmark.triangle.fill",
+                            systemImage: SFSymbols.warningFilled,
                             description: Text(error)
                         )
                         .overlay(alignment: .bottom) {
@@ -46,7 +47,7 @@ struct TechnologySearchView: View {
                     } else if viewModel.podcasts.isEmpty {
                         ContentUnavailableView(
                             "Nada por aqui",
-                            systemImage: "magnifyingglass",
+                            systemImage: SFSymbols.search,
                             description: Text("Toque em atualizar para buscar podcasts de tecnologia.")
                         )
                     } else {
@@ -131,7 +132,9 @@ struct TechnologySearchView: View {
                             .controlSize(.large)
                         Text("Carregando podcast...")
                             .font(Typography.body)
-                            .foregroundStyle(Colors.textSecondary)
+                            .foregroundStyle(
+                                Colors.text(.secondary, on: .appBackground, scheme: colorScheme)
+                            )
                     }
                 }
             }
@@ -160,9 +163,11 @@ struct TechnologySearchView: View {
                         ZStack {
                             RoundedRectangle(cornerRadius: Spacing.radius12, style: .continuous)
                                 .fill(Colors.surfaceMuted)
-                            Image(systemName: "waveform")
+                            Image(systemName: SFSymbols.waveform)
                                 .font(Typography.iconArtworkFallback)
-                                .foregroundStyle(Colors.textSecondary)
+                                .foregroundStyle(
+                                    Colors.text(.secondary, on: .card, scheme: colorScheme)
+                                )
                         }
                     }
                 }
@@ -176,9 +181,11 @@ struct TechnologySearchView: View {
             ZStack {
                 RoundedRectangle(cornerRadius: Spacing.radius12, style: .continuous)
                     .fill(Colors.surfaceMuted)
-                Image(systemName: "waveform")
+                Image(systemName: SFSymbols.waveform)
                     .font(Typography.iconArtworkFallback)
-                    .foregroundStyle(Colors.textSecondary)
+                    .foregroundStyle(
+                        Colors.text(.secondary, on: .card, scheme: colorScheme)
+                    )
             }
         }
     }

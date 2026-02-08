@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct StudyResultsView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @State private var viewModel: StudyFlowViewModel
     private let columns = [
         GridItem(.flexible(), spacing: Spacing.space16),
@@ -30,16 +31,20 @@ struct StudyResultsView: View {
                             .controlSize(.large)
                         Text("Preparando seu estudo...")
                             .font(Typography.body)
-                            .foregroundStyle(Colors.textSecondary)
+                            .foregroundStyle(
+                                Colors.text(.secondary, on: .appBackground, scheme: colorScheme)
+                            )
                         Text("Buscando podcasts relevantes para você.")
                             .font(Typography.meta)
-                            .foregroundStyle(Colors.textSecondary)
+                            .foregroundStyle(
+                                Colors.text(.secondary, on: .appBackground, scheme: colorScheme)
+                            )
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 case .error(let message):
                     ContentUnavailableView(
                         "Não foi possível carregar",
-                        systemImage: "exclamationmark.triangle.fill",
+                        systemImage: SFSymbols.warningFilled,
                         description: Text(message)
                     )
                     .overlay(alignment: .bottom) {
@@ -54,7 +59,7 @@ struct StudyResultsView: View {
                 case .empty:
                     ContentUnavailableView(
                         "Nenhum podcast encontrado",
-                        systemImage: "waveform",
+                        systemImage: SFSymbols.waveform,
                         description: Text("Volte e ajuste o tema para buscar novamente.")
                     )
                 case .loaded(let results, let query, let source):
@@ -65,7 +70,9 @@ struct StudyResultsView: View {
                             if source == .curated {
                                 Text("Mostrando curadoria local enquanto a busca principal está indisponível.")
                                     .font(Typography.meta)
-                                    .foregroundStyle(Colors.textSecondary)
+                                    .foregroundStyle(
+                                        Colors.text(.secondary, on: .appBackground, scheme: colorScheme)
+                                    )
                             }
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -81,12 +88,16 @@ struct StudyResultsView: View {
                                     )
                                     Text(podcast.title)
                                         .font(Typography.title)
-                                        .foregroundStyle(Colors.textPrimary)
+                                        .foregroundStyle(
+                                            Colors.text(.primary, on: .card, scheme: colorScheme)
+                                        )
                                         .lineLimit(2)
                                     if let author = podcast.author, !author.isEmpty {
                                         Text(author)
                                             .font(Typography.caption)
-                                            .foregroundStyle(Colors.textSecondary)
+                                            .foregroundStyle(
+                                                Colors.text(.secondary, on: .card, scheme: colorScheme)
+                                            )
                                     }
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -99,7 +110,7 @@ struct StudyResultsView: View {
                 case .idle:
                     ContentUnavailableView(
                         "Busque por um tema",
-                        systemImage: "magnifyingglass",
+                        systemImage: SFSymbols.search,
                         description: Text("Volte para a tela anterior e escolha o que estudar.")
                     )
                 }

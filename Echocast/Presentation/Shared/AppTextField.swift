@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct AppTextField: View {
+    @Environment(\.colorScheme) private var colorScheme
     let placeholder: String
     @Binding var text: String
     var leadingSystemImage: String?
@@ -23,7 +24,9 @@ struct AppTextField: View {
         HStack(spacing: Spacing.space12) {
             if let leadingSystemImage {
                 Image(systemName: leadingSystemImage)
-                    .foregroundStyle(Colors.textSecondary)
+                    .foregroundStyle(
+                        Colors.text(.secondary, on: .appBackground, scheme: colorScheme)
+                    )
             }
 
             configuredTextField
@@ -42,7 +45,9 @@ struct AppTextField: View {
     }
 
     private var borderColor: Color {
-        hasError ? Colors.feedbackError : Colors.textSecondary.opacity(0.35)
+        hasError
+            ? Colors.feedbackError
+            : Colors.text(.secondary, on: .appBackground, scheme: colorScheme).opacity(0.35)
     }
 
     @ViewBuilder

@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct StudyWelcomeView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @State private var viewModel: StudyFlowViewModel
     @FocusState private var isFocused: Bool
     private let onContinue: () -> Void
@@ -44,16 +45,20 @@ struct StudyWelcomeView: View {
                     VStack(alignment: .leading, spacing: Spacing.space8) {
                         Text("Explore conteúdos técnicos")
                             .font(Typography.heroTitle)
-                            .foregroundStyle(Colors.textPrimary)
+                            .foregroundStyle(
+                                Colors.text(.primary, on: .appBackground, scheme: colorScheme)
+                            )
                         Text("Podcasts técnicos curados para estudo, carreira e evolução profissional.")
                             .font(Typography.body)
-                            .foregroundStyle(Colors.textSecondary)
+                            .foregroundStyle(
+                                Colors.text(.secondary, on: .appBackground, scheme: colorScheme)
+                            )
                     }
 
                     AppTextField(
                         placeholder: "Buscar por tema, tecnologia ou podcast",
                         text: $viewModel.searchQuery,
-                        leadingSystemImage: "magnifyingglass",
+                        leadingSystemImage: SFSymbols.search,
                         textInputAutocapitalization: .never,
                         autocorrectionDisabled: true,
                         submitLabel: .search,
@@ -67,21 +72,23 @@ struct StudyWelcomeView: View {
                     }
 
                     VStack(spacing: Spacing.space12) {
-                        Label("Frontend & UI", systemImage: "laptopcomputer")
+                        Label("Frontend & UI", systemImage: SFSymbols.studyFrontend)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .appCardStyle()
-                        Label("Backend & APIs", systemImage: "server.rack")
+                        Label("Backend & APIs", systemImage: SFSymbols.studyBackend)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .appCardStyle()
-                        Label("Arquitetura & Sistemas", systemImage: "flowchart")
+                        Label("Arquitetura & Sistemas", systemImage: SFSymbols.studyArchitecture)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .appCardStyle()
-                        Label("Carreira em Tecnologia", systemImage: "briefcase")
+                        Label("Carreira em Tecnologia", systemImage: SFSymbols.studyCareer)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .appCardStyle()
                     }
                     .font(Typography.title)
-                    .foregroundStyle(Colors.textPrimary)
+                    .foregroundStyle(
+                        Colors.text(.primary, on: .card, scheme: colorScheme)
+                    )
                     .labelStyle(.titleAndIcon)
 
                     Button {
