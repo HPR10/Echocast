@@ -26,20 +26,10 @@ struct StudyResultsView: View {
             Group {
                 switch viewModel.state {
                 case .loading:
-                    VStack(spacing: Spacing.space12) {
-                        ProgressView()
-                            .controlSize(.large)
-                        Text("Preparando seu estudo...")
-                            .font(Typography.body)
-                            .foregroundStyle(
-                                Colors.text(.secondary, on: .appBackground, scheme: colorScheme)
-                            )
-                        Text("Buscando podcasts relevantes para você.")
-                            .font(Typography.meta)
-                            .foregroundStyle(
-                                Colors.text(.secondary, on: .appBackground, scheme: colorScheme)
-                            )
-                    }
+                    AppLoadingView(
+                        message: "Preparando seu estudo...",
+                        subtitle: "Buscando podcasts relevantes para você."
+                    )
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 case .error(let message):
                     ContentUnavailableView(
@@ -48,12 +38,13 @@ struct StudyResultsView: View {
                         description: Text(message)
                     )
                     .overlay(alignment: .bottom) {
-                        Button("Tentar novamente") {
-                            Task {
-                                await viewModel.startStudy()
-                            }
-                        }
-                        .buttonStyle(.borderedProminent)
+                        AppButton(
+                            title: "Tentar novamente",
+                            action: { Task { await viewModel.startStudy() } },
+                            expands: false,
+                            variant: .prominent,
+                            controlSize: .regular
+                        )
                         .padding(.bottom, Spacing.space12)
                     }
                 case .empty:

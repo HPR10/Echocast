@@ -72,26 +72,37 @@ struct StudyWelcomeView: View {
                     }
 
                     VStack(spacing: Spacing.space12) {
-                        Label("Frontend & UI", systemImage: SFSymbols.studyFrontend)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .appCardStyle()
-                        Label("Backend & APIs", systemImage: SFSymbols.studyBackend)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .appCardStyle()
-                        Label("Arquitetura & Sistemas", systemImage: SFSymbols.studyArchitecture)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .appCardStyle()
-                        Label("Carreira em Tecnologia", systemImage: SFSymbols.studyCareer)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .appCardStyle()
-                    }
-                    .font(Typography.title)
-                    .foregroundStyle(
-                        Colors.text(.primary, on: .card, scheme: colorScheme)
-                    )
-                    .labelStyle(.titleAndIcon)
+                        AppIconLabel(
+                            text: "Frontend & UI",
+                            symbol: SFSymbols.studyFrontend,
+                            font: Typography.title
+                        )
+                        .appCardStyle()
 
-                    AppGlassButton(
+                        AppIconLabel(
+                            text: "Backend & APIs",
+                            symbol: SFSymbols.studyBackend,
+                            font: Typography.title
+                        )
+                        .appCardStyle()
+
+                        AppIconLabel(
+                            text: "Arquitetura & Sistemas",
+                            symbol: SFSymbols.studyArchitecture,
+                            font: Typography.title
+                        )
+                        .appCardStyle()
+
+                        AppIconLabel(
+                            text: "Carreira em Tecnologia",
+                            symbol: SFSymbols.studyCareer,
+                            font: Typography.title
+                        )
+                        .appCardStyle()
+                    }
+
+                    AppButton(
+                        title: "Explorar episódios",
                         action: {
                             viewModel.clearResults()
                             Task {
@@ -100,20 +111,12 @@ struct StudyWelcomeView: View {
                                 }
                             }
                         },
-                        label: {
-                            HStack(spacing: Spacing.space8) {
-                                Text("Explorar episódios")
-                                if isLoading {
-                                    ProgressView()
-                                        .controlSize(.small)
-                                }
-                            }
-                        },
-                        tint: Colors.brand300,
-                        cornerRadius: Spacing.cornerRadius,
+                        isLoading: isLoading,
+                        isDisabled: isLoading,
                         expands: true,
+                        variant: .glass,
                         controlSize: .large,
-                        isDisabled: isLoading
+                        glassTint: Colors.brand300
                     )
 
                 }

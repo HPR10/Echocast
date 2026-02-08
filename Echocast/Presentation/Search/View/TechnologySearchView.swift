@@ -28,9 +28,8 @@ struct TechnologySearchView: View {
 
                 Group {
                     if viewModel.isLoading {
-                        ProgressView("Carregando...")
+                        AppLoadingView(message: "Carregando...")
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .multilineTextAlignment(.center)
                     } else if let error = viewModel.errorMessage {
                         ContentUnavailableView(
                             "Erro ao carregar",
@@ -38,10 +37,13 @@ struct TechnologySearchView: View {
                             description: Text(error)
                         )
                         .overlay(alignment: .bottom) {
-                            Button("Tentar novamente") {
-                                Task { await viewModel.loadPodcasts() }
-                            }
-                            .buttonStyle(.borderedProminent)
+                            AppButton(
+                                title: "Tentar novamente",
+                                action: { Task { await viewModel.loadPodcasts() } },
+                                expands: false,
+                                variant: .prominent,
+                                controlSize: .regular
+                            )
                             .padding()
                         }
                     } else if viewModel.podcasts.isEmpty {
@@ -127,15 +129,7 @@ struct TechnologySearchView: View {
                     Colors.backgroundPrimary
                         .ignoresSafeArea()
 
-                    VStack(spacing: Spacing.space12) {
-                        ProgressView()
-                            .controlSize(.large)
-                        Text("Carregando podcast...")
-                            .font(Typography.body)
-                            .foregroundStyle(
-                                Colors.text(.secondary, on: .appBackground, scheme: colorScheme)
-                            )
-                    }
+                    AppLoadingView(message: "Carregando podcast...")
                 }
             }
         }

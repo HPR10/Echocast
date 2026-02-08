@@ -1,0 +1,3 @@
+[mcp_servers.Notion]
+url = "https://mcp.notion.com/mcp"
+enabled = true

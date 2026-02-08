@@ -1,18 +1,18 @@
 import SwiftUI
 
 private struct AppCardModifier: ViewModifier {
+    private var cardShape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: Spacing.cornerRadius, style: .continuous)
+    }
+
     func body(content: Content) -> some View {
         content
             .padding(Spacing.cardPadding)
-            .background(
-                RoundedRectangle(cornerRadius: Spacing.cornerRadius, style: .continuous)
-                    .fill(Colors.surfaceSecondary)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: Spacing.cornerRadius, style: .continuous)
-                    .stroke(Colors.cardBorder, lineWidth: 1)
-            )
-            .shadow(color: Colors.cardShadow, radius: Spacing.shadowRadius14, x: 0, y: 6)
+            .glassEffect(in: .rect(cornerRadius: Spacing.cornerRadius))
+            .overlay {
+                cardShape
+                    .stroke(Colors.cardBorder, lineWidth: 0.8)
+            }
     }
 }
 

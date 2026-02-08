@@ -13,6 +13,10 @@ struct PodcastArtworkView: View {
     let size: CGFloat
     var cornerRadius: CGFloat = Spacing.radius16
 
+    private var artworkShape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+    }
+
     var body: some View {
         LazyImage(url: imageURL) { state in
             if let image = state.image {
@@ -21,21 +25,28 @@ struct PodcastArtworkView: View {
                     .aspectRatio(1, contentMode: .fill)
             } else if state.isLoading {
                 ProgressView()
+                    .progressViewStyle(.circular)
+                    .tint(.secondary)
             } else {
                 placeholder
             }
         }
         .frame(width: size, height: size)
-        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-        .shadow(color: Colors.artworkShadow, radius: Spacing.shadowRadius12, x: 0, y: 6)
+        .glassEffect(in: .rect(cornerRadius: cornerRadius))
+        .overlay {
+            artworkShape
+                .stroke(Colors.cardBorder, lineWidth: 0.8)
+        }
+        .clipShape(artworkShape)
     }
 
     private var placeholder: some View {
-        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-            .fill(Colors.surfaceMuted)
+        artworkShape
+            .fill(Colors.surfaceSubtle)
             .overlay {
                 Image(systemName: SFSymbols.microphoneFilled)
-                    .font(.system(size: 48, weight: .semibold))
+                    .font(Typography.iconArtworkFallback)
+                    .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(Colors.iconMuted)
             }
     }

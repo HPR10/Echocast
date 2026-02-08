@@ -100,27 +100,16 @@ extension AddPodcastView {
                 .foregroundStyle(Colors.feedbackError)
         }
 
-        Button {
-            viewModel.loadFeed()
-        } label: {
-            if viewModel.isLoading {
-                ProgressView()
-                    .tint(Colors.tintOnAccent)
-            } else {
-                HStack(spacing: Spacing.space8) {
-                    Text("Carregar")
-                        .font(Typography.buttonLabel)
-                    Image(systemName: SFSymbols.arrowRightCircleFilled)
-                        .imageScale(.medium)
-                }
-                .padding(.horizontal, Spacing.space16)
-                .padding(.vertical, Spacing.space12)
-            }
-        }
-        .controlSize(.regular)
-        .disabled(!viewModel.isValidURL(viewModel.inputText) || viewModel.isLoading)
-        .buttonStyle(.borderedProminent)
-        .frame(maxWidth: .infinity)
+        AppButton(
+            title: "Carregar",
+            action: { viewModel.loadFeed() },
+            symbol: SFSymbols.arrowRightCircleFilled,
+            isLoading: viewModel.isLoading,
+            isDisabled: !viewModel.isValidURL(viewModel.inputText),
+            expands: true,
+            variant: .prominent,
+            controlSize: .regular
+        )
     }
 
     @ViewBuilder
@@ -225,15 +214,7 @@ extension AddPodcastView {
             Colors.backgroundPrimary
                 .ignoresSafeArea()
 
-            VStack(spacing: Spacing.space12) {
-                ProgressView()
-                    .controlSize(.large)
-                Text("Carregando...")
-                    .font(Typography.body)
-                    .foregroundStyle(
-                        Colors.text(.secondary, on: .appBackground, scheme: colorScheme)
-                    )
-            }
+            AppLoadingView(message: "Carregando...")
             .transition(.opacity)
         }
     }
@@ -347,22 +328,15 @@ extension AddPodcastView {
                         .foregroundStyle(Colors.feedbackError)
                 }
 
-                Button {
-
-                } label: {
-                    HStack(spacing: Spacing.space8) {
-                        Text("Carregar")
-                            .font(Typography.buttonLabel)
-                        Image(systemName: SFSymbols.arrowRightCircleFilled)
-                            .imageScale(.medium)
-                    }
-                    .padding(.horizontal, Spacing.space16)
-                    .padding(.vertical, Spacing.space12)
-                }
-                .controlSize(.regular)
-                .disabled(!viewModel.isValidURL(viewModel.inputText))
-                .buttonStyle(.borderedProminent)
-                .frame(maxWidth: .infinity)
+                AppButton(
+                    title: "Carregar",
+                    action: { },
+                    symbol: SFSymbols.arrowRightCircleFilled,
+                    isDisabled: !viewModel.isValidURL(viewModel.inputText),
+                    expands: true,
+                    variant: .prominent,
+                    controlSize: .regular
+                )
 
                 Spacer()
             }
@@ -407,22 +381,15 @@ extension AddPodcastView {
                     autocorrectionDisabled: true
                 )
 
-                Button {
-
-                } label: {
-                    HStack(spacing: Spacing.space8) {
-                        Text("Carregar")
-                            .font(Typography.buttonLabel)
-                        Image(systemName: SFSymbols.arrowRightCircleFilled)
-                            .imageScale(.medium)
-                    }
-                    .padding(.horizontal, Spacing.space16)
-                    .padding(.vertical, Spacing.space12)
-                }
-                .controlSize(.regular)
-                .disabled(!viewModel.isValidURL(viewModel.inputText))
-                .buttonStyle(.borderedProminent)
-                .frame(maxWidth: .infinity)
+                AppButton(
+                    title: "Carregar",
+                    action: { },
+                    symbol: SFSymbols.arrowRightCircleFilled,
+                    isDisabled: !viewModel.isValidURL(viewModel.inputText),
+                    expands: true,
+                    variant: .prominent,
+                    controlSize: .regular
+                )
 
                 Spacer()
             }

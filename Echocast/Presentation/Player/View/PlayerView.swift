@@ -364,15 +364,12 @@ private extension PlayerView {
 
         VStack(spacing: Spacing.space8) {
             if viewModel.isBuffering {
-                HStack(spacing: Spacing.space8) {
-                    ProgressView()
-                    Text(viewModel.bufferingMessage ?? "Carregando...")
-                        .font(Typography.caption)
-                        .foregroundStyle(
-                            Colors.text(.secondary, on: .appBackground, scheme: colorScheme)
-                        )
-                        .multilineTextAlignment(.leading)
-                }
+                AppLoadingView(
+                    message: viewModel.bufferingMessage ?? "Carregando...",
+                    surface: .appBackground,
+                    controlSize: .small,
+                    style: .inline
+                )
             }
 
             Slider(

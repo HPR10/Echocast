@@ -1,7 +1,6 @@
 import SwiftUI
 
 struct AppGlassButton<Label: View>: View {
-    @Environment(\.colorScheme) private var colorScheme
     let action: () -> Void
     let label: () -> Label
     var tint: Color = Colors.brand300
@@ -11,19 +10,19 @@ struct AppGlassButton<Label: View>: View {
     var isDisabled: Bool = false
     var textColor: Color? = nil
 
+    private var buttonShape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+    }
+
     var body: some View {
         Button(action: action) {
             label()
                 .frame(maxWidth: expands ? .infinity : nil)
-                .padding(.vertical, Spacing.space12)
-                .padding(.horizontal, Spacing.space16)
         }
-        .glassEffect(
-            .regular.tint(tint).interactive(),
-            in: .rect(cornerRadius: cornerRadius)
-        )
-        .foregroundStyle(textColor ?? Colors.text(.primary, on: .accent, scheme: colorScheme))
-        .buttonStyle(.plain)
+        .buttonStyle(.glass(.regular.tint(tint).interactive()))
+        .buttonBorderShape(.roundedRectangle(radius: cornerRadius))
+        .contentShape(buttonShape)
+        .foregroundStyle(textColor ?? Color.primary)
         .controlSize(controlSize)
         .disabled(isDisabled)
     }
