@@ -21,9 +21,9 @@ enum SFSymbols {
     static let warningFilled = "exclamationmark.triangle.fill"
     static let headphones = "headphones"
 
-    static let tabHome = "house.fill"
-    static let tabStudy = "graduationcap.fill"
-    static let tabFavorites = "star.fill"
+    static let tabHome = "house"
+    static let tabStudy = "graduationcap"
+    static let tabFavorites = "star"
 
     static let arrowRightCircleFilled = "arrow.right.circle.fill"
 

@@ -91,25 +91,30 @@ struct StudyWelcomeView: View {
                     )
                     .labelStyle(.titleAndIcon)
 
-                    Button {
-                        viewModel.clearResults()
-                        Task {
-                            if await viewModel.startStudy() {
-                                onContinue()
+                    AppGlassButton(
+                        action: {
+                            viewModel.clearResults()
+                            Task {
+                                if await viewModel.startStudy() {
+                                    onContinue()
+                                }
                             }
-                        }
-                    } label: {
-                        HStack {
-                            Text("Explorar episódios")
-                            if isLoading {
-                                ProgressView()
-                                    .controlSize(.small)
+                        },
+                        label: {
+                            HStack(spacing: Spacing.space8) {
+                                Text("Explorar episódios")
+                                if isLoading {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                }
                             }
-                        }
-                        .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(isLoading)
+                        },
+                        tint: Colors.brand300,
+                        cornerRadius: Spacing.cornerRadius,
+                        expands: true,
+                        controlSize: .large,
+                        isDisabled: isLoading
+                    )
 
                 }
                 .padding(.horizontal, Spacing.horizontalPadding)

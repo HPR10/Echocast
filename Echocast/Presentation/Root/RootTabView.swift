@@ -38,12 +38,11 @@ struct RootTabView: View {
     }
 
     var body: some View {
-        if #available(iOS 26.0, *) {
-            modernTabView
-                .tabViewBottomAccessory {
-                    bottomAccessory
-                }
-                .sheet(isPresented: $isPresentingPlayer) {
+        modernTabView
+            .tabViewBottomAccessory {
+                bottomAccessory
+            }
+            .sheet(isPresented: $isPresentingPlayer) {
                 if let viewModel = playerCoordinator.viewModel {
                     PlayerView(
                         viewModel: viewModel,
@@ -51,12 +50,7 @@ struct RootTabView: View {
                         podcastImageURL: playerCoordinator.podcastImageURL
                     )
                 }
-                }
-        } else if #available(iOS 18.0, *) {
-            modernTabView
-        } else {
-            legacyTabView
-        }
+            }
     }
 
     @ViewBuilder
@@ -79,31 +73,7 @@ struct RootTabView: View {
                     .searchable(text: $searchQuery, prompt: "Buscar")
             }
         }
-    }
-
-    @ViewBuilder
-    private var legacyTabView: some View {
-        TabView {
-            studyContent
-                .tabItem {
-                    Label("Estudo", systemImage: SFSymbols.tabStudy)
-                }
-
-            addContent
-                .tabItem {
-                    Label("Início", systemImage: SFSymbols.tabHome)
-                }
-
-            favoritesContent
-                .tabItem {
-                    Label("Favoritos", systemImage: SFSymbols.tabFavorites)
-                }
-
-            searchContent
-                .tabItem {
-                    Label("Buscar", systemImage: SFSymbols.search)
-                }
-        }
+        .tabViewStyle(.sidebarAdaptable)
     }
 
     @ViewBuilder
