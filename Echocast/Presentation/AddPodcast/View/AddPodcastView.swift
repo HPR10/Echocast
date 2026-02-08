@@ -27,7 +27,7 @@ struct AddPodcastView: View {
                 AppBackgroundView()
 
                 ZStack {
-                    VStack(spacing: 16) {
+                    VStack(spacing: Spacing.space16) {
                         headerView
                         inputSection
                         historyList
@@ -75,8 +75,7 @@ extension AddPodcastView {
     @ViewBuilder
     var headerView: some View {
         Text("URL do Podcast")
-            .font(.title2)
-            .fontWeight(.bold)
+            .font(Typography.screenTitle)
     }
 
     @ViewBuilder
@@ -96,8 +95,8 @@ extension AddPodcastView {
 
         if viewModel.shouldShowError(), let error = viewModel.validationError() {
             Text(error)
-                .font(AppTypography.caption)
-                .foregroundStyle(.red)
+                .font(Typography.caption)
+                .foregroundStyle(Colors.feedbackError)
         }
 
         Button {
@@ -105,16 +104,16 @@ extension AddPodcastView {
         } label: {
             if viewModel.isLoading {
                 ProgressView()
-                    .tint(.white)
+                    .tint(Colors.tintOnAccent)
             } else {
-                HStack(spacing: 8) {
+                HStack(spacing: Spacing.space8) {
                     Text("Carregar")
-                        .font(.headline.weight(.semibold))
+                        .font(Typography.buttonLabel)
                     Image(systemName: "arrow.right.circle.fill")
                         .imageScale(.medium)
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
+                .padding(.horizontal, Spacing.space16)
+                .padding(.vertical, Spacing.space12)
             }
         }
         .controlSize(.regular)
@@ -145,13 +144,13 @@ extension AddPodcastView {
                         Button {
                             viewModel.inputText = item.url
                         } label: {
-                            HStack(spacing: 12) {
+                            HStack(spacing: Spacing.space12) {
                                 historyArtwork(
                                     for: item.url,
                                     artworkByURL: artworkByURL
                                 )
                                 Text(item.url)
-                                    .foregroundStyle(.primary)
+                                    .foregroundStyle(Colors.textPrimary)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                     .lineLimit(1)
                                     .truncationMode(.middle)
@@ -195,38 +194,38 @@ extension AddPodcastView {
                     placeholderIcon
                 }
             }
-            .frame(width: 28, height: 28)
-            .clipShape(RoundedRectangle(cornerRadius: 6))
+            .frame(width: Size.historyArtwork, height: Size.historyArtwork)
+            .clipShape(RoundedRectangle(cornerRadius: Spacing.radius6))
             .overlay(
-                RoundedRectangle(cornerRadius: 6)
-                    .stroke(Color.gray.opacity(0.15), lineWidth: 1)
+                RoundedRectangle(cornerRadius: Spacing.radius6)
+                    .stroke(Colors.borderSubtle, lineWidth: 1)
             )
         } else {
             placeholderIcon
-                .frame(width: 28, height: 28)
-                .background(Color.gray.opacity(0.12))
-                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .frame(width: Size.historyArtwork, height: Size.historyArtwork)
+                .background(Colors.surfaceSubtle)
+                .clipShape(RoundedRectangle(cornerRadius: Spacing.radius6))
         }
     }
 
     private var placeholderIcon: some View {
         Image(systemName: "dot.radiowaves.left.and.right")
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Colors.textSecondary)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     @ViewBuilder
     var loadingOverlay: some View {
         ZStack {
-            Color(.systemBackground)
+            Colors.backgroundPrimary
                 .ignoresSafeArea()
 
-            VStack(spacing: 12) {
+            VStack(spacing: Spacing.space12) {
                 ProgressView()
                     .controlSize(.large)
                 Text("Carregando...")
-                    .font(AppTypography.body)
-                    .foregroundStyle(.secondary)
+                    .font(Typography.body)
+                    .foregroundStyle(Colors.textSecondary)
             }
             .transition(.opacity)
         }
@@ -321,10 +320,9 @@ extension AddPodcastView {
         var body: some View {
             @Bindable var viewModel = viewModel
 
-            VStack(spacing: 16) {
+            VStack(spacing: Spacing.space16) {
                 Text("URL do Podcast")
-                    .font(.title2)
-                    .fontWeight(.bold)
+                    .font(Typography.screenTitle)
 
                 AppTextField(
                     placeholder: "URL do RSS",
@@ -338,21 +336,21 @@ extension AddPodcastView {
 
                 if viewModel.shouldShowError(), let error = viewModel.validationError() {
                     Text(error)
-                        .font(AppTypography.caption)
-                        .foregroundStyle(.red)
+                        .font(Typography.caption)
+                        .foregroundStyle(Colors.feedbackError)
                 }
 
                 Button {
 
                 } label: {
-                    HStack(spacing: 8) {
+                    HStack(spacing: Spacing.space8) {
                         Text("Carregar")
-                            .font(.headline.weight(.semibold))
+                            .font(Typography.buttonLabel)
                         Image(systemName: "arrow.right.circle.fill")
                             .imageScale(.medium)
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
+                    .padding(.horizontal, Spacing.space16)
+                    .padding(.vertical, Spacing.space12)
                 }
                 .controlSize(.regular)
                 .disabled(!viewModel.isValidURL(viewModel.inputText))
@@ -389,10 +387,9 @@ extension AddPodcastView {
         var body: some View {
             @Bindable var viewModel = viewModel
 
-            VStack(spacing: 16) {
+            VStack(spacing: Spacing.space16) {
                 Text("URL do Podcast")
-                    .font(.title2)
-                    .fontWeight(.bold)
+                    .font(Typography.screenTitle)
 
                 AppTextField(
                     placeholder: "URL do RSS",
@@ -406,14 +403,14 @@ extension AddPodcastView {
                 Button {
 
                 } label: {
-                    HStack(spacing: 8) {
+                    HStack(spacing: Spacing.space8) {
                         Text("Carregar")
-                            .font(.headline.weight(.semibold))
+                            .font(Typography.buttonLabel)
                         Image(systemName: "arrow.right.circle.fill")
                             .imageScale(.medium)
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
+                    .padding(.horizontal, Spacing.space16)
+                    .padding(.vertical, Spacing.space12)
                 }
                 .controlSize(.regular)
                 .disabled(!viewModel.isValidURL(viewModel.inputText))

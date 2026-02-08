@@ -40,14 +40,14 @@ struct StudyWelcomeView: View {
             AppBackgroundView()
 
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: Spacing.space20) {
+                    VStack(alignment: .leading, spacing: Spacing.space8) {
                         Text("Explore conteúdos técnicos")
-                            .font(AppTypography.heroTitle)
-                            .foregroundStyle(.primary)
+                            .font(Typography.heroTitle)
+                            .foregroundStyle(Colors.textPrimary)
                         Text("Podcasts técnicos curados para estudo, carreira e evolução profissional.")
-                            .font(AppTypography.body)
-                            .foregroundStyle(.secondary)
+                            .font(Typography.body)
+                            .foregroundStyle(Colors.textSecondary)
                     }
 
                     AppTextField(
@@ -62,11 +62,11 @@ struct StudyWelcomeView: View {
 
                     if let errorMessage = viewModel.inputErrorMessage {
                         Text(errorMessage)
-                            .font(AppTypography.meta)
-                            .foregroundStyle(.red)
+                            .font(Typography.meta)
+                            .foregroundStyle(Colors.feedbackError)
                     }
 
-                    VStack(spacing: 12) {
+                    VStack(spacing: Spacing.space12) {
                         Label("Frontend & UI", systemImage: "laptopcomputer")
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .appCardStyle()
@@ -80,8 +80,8 @@ struct StudyWelcomeView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .appCardStyle()
                     }
-                    .font(AppTypography.title)
-                    .foregroundStyle(.primary)
+                    .font(Typography.title)
+                    .foregroundStyle(Colors.textPrimary)
                     .labelStyle(.titleAndIcon)
 
                     Button {
@@ -105,9 +105,9 @@ struct StudyWelcomeView: View {
                     .disabled(isLoading)
 
                 }
-                .padding(.horizontal, AppStyle.horizontalPadding)
-                .padding(.top, 24)
-                .padding(.bottom, 32)
+                .padding(.horizontal, Spacing.horizontalPadding)
+                .padding(.top, Spacing.space24)
+                .padding(.bottom, Spacing.space32)
             }
         }
         .navigationTitle("Estudo")

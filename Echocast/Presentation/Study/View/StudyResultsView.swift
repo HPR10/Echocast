@@ -10,8 +10,8 @@ import SwiftUI
 struct StudyResultsView: View {
     @State private var viewModel: StudyFlowViewModel
     private let columns = [
-        GridItem(.flexible(), spacing: 16),
-        GridItem(.flexible(), spacing: 16)
+        GridItem(.flexible(), spacing: Spacing.space16),
+        GridItem(.flexible(), spacing: Spacing.space16)
     ]
 
     init(viewModel: StudyFlowViewModel) {
@@ -25,15 +25,15 @@ struct StudyResultsView: View {
             Group {
                 switch viewModel.state {
                 case .loading:
-                    VStack(spacing: 12) {
+                    VStack(spacing: Spacing.space12) {
                         ProgressView()
                             .controlSize(.large)
                         Text("Preparando seu estudo...")
-                            .font(AppTypography.body)
-                            .foregroundStyle(.secondary)
+                            .font(Typography.body)
+                            .foregroundStyle(Colors.textSecondary)
                         Text("Buscando podcasts relevantes para você.")
-                            .font(AppTypography.meta)
-                            .foregroundStyle(.secondary)
+                            .font(Typography.meta)
+                            .foregroundStyle(Colors.textSecondary)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 case .error(let message):
@@ -49,7 +49,7 @@ struct StudyResultsView: View {
                             }
                         }
                         .buttonStyle(.borderedProminent)
-                        .padding(.bottom, 12)
+                        .padding(.bottom, Spacing.space12)
                     }
                 case .empty:
                     ContentUnavailableView(
@@ -59,42 +59,42 @@ struct StudyResultsView: View {
                     )
                 case .loaded(let results, let query, let source):
                     ScrollView {
-                        VStack(alignment: .leading, spacing: 12) {
+                        VStack(alignment: .leading, spacing: Spacing.space12) {
                             Text("Resultados para \"\(query)\"")
-                                .font(AppTypography.sectionTitle)
+                                .font(Typography.sectionTitle)
                             if source == .curated {
                                 Text("Mostrando curadoria local enquanto a busca principal está indisponível.")
-                                    .font(AppTypography.meta)
-                                    .foregroundStyle(.secondary)
+                                    .font(Typography.meta)
+                                    .foregroundStyle(Colors.textSecondary)
                             }
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, AppStyle.horizontalPadding)
+                        .padding(.horizontal, Spacing.horizontalPadding)
 
-                        LazyVGrid(columns: columns, spacing: 16) {
+                        LazyVGrid(columns: columns, spacing: Spacing.space16) {
                             ForEach(results) { podcast in
-                                VStack(alignment: .leading, spacing: 8) {
+                                VStack(alignment: .leading, spacing: Spacing.space8) {
                                     PodcastArtworkView(
                                         imageURL: podcast.imageURL,
-                                        size: 120,
-                                        cornerRadius: 16
+                                        size: Size.studyResultArtwork,
+                                        cornerRadius: Spacing.radius16
                                     )
                                     Text(podcast.title)
-                                        .font(AppTypography.title)
-                                        .foregroundStyle(.primary)
+                                        .font(Typography.title)
+                                        .foregroundStyle(Colors.textPrimary)
                                         .lineLimit(2)
                                     if let author = podcast.author, !author.isEmpty {
                                         Text(author)
-                                            .font(AppTypography.caption)
-                                            .foregroundStyle(.secondary)
+                                            .font(Typography.caption)
+                                            .foregroundStyle(Colors.textSecondary)
                                     }
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .appCardStyle()
                             }
                         }
-                        .padding(.horizontal, AppStyle.horizontalPadding)
-                        .padding(.bottom, 32)
+                        .padding(.horizontal, Spacing.horizontalPadding)
+                        .padding(.bottom, Spacing.space32)
                     }
                 case .idle:
                     ContentUnavailableView(

@@ -14,7 +14,7 @@ struct PodcastDetailView: View {
         ZStack {
             AppBackgroundView()
 
-            VStack(spacing: 24) {
+            VStack(spacing: Spacing.space24) {
                 podcastHeader
                 episodesSection
             }
@@ -37,23 +37,23 @@ private extension PodcastDetailView {
 
     @ViewBuilder
     var podcastHeader: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: Spacing.space12) {
             PodcastArtworkView(
                 imageURL: viewModel.podcast.imageURL,
-                size: 170,
-                cornerRadius: 12
+                size: Size.podcastDetailArtwork,
+                cornerRadius: Spacing.radius12
             )
 
             if let author = viewModel.podcast.author {
                 Text(author)
-                    .font(AppTypography.body)
-                    .foregroundStyle(.secondary)
+                    .font(Typography.body)
+                    .foregroundStyle(Colors.textSecondary)
             }
 
             if let description = viewModel.podcast.description {
                 Text(description)
-                    .font(AppTypography.caption)
-                    .foregroundStyle(.secondary)
+                    .font(Typography.caption)
+                    .foregroundStyle(Colors.textSecondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
             }
@@ -87,33 +87,33 @@ private struct EpisodeRow: View {
     let episode: Episode
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: Spacing.space4) {
             Text(episode.title)
-                .font(AppTypography.title)
+                .font(Typography.title)
                 .lineLimit(2)
 
             if let description = episode.description, !description.isEmpty {
                 Text(description)
-                    .font(AppTypography.body)
-                    .foregroundStyle(.secondary)
+                    .font(Typography.body)
+                    .foregroundStyle(Colors.textSecondary)
                     .lineLimit(3)
             }
 
-            HStack(spacing: 8) {
+            HStack(spacing: Spacing.space8) {
                 if let date = episode.publishedAt {
                     Text(date, style: .date)
-                        .font(AppTypography.caption)
-                        .foregroundStyle(.secondary)
+                        .font(Typography.caption)
+                        .foregroundStyle(Colors.textSecondary)
                 }
 
                 if let duration = episode.duration {
                     Text(formatDuration(duration))
-                        .font(AppTypography.caption)
-                        .foregroundStyle(.secondary)
+                        .font(Typography.caption)
+                        .foregroundStyle(Colors.textSecondary)
                 }
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, Spacing.space4)
     }
 
     private func formatDuration(_ seconds: TimeInterval) -> String {

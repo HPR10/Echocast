@@ -71,38 +71,38 @@ private struct FavoriteEpisodeRow: View {
     let favorite: FavoriteEpisode
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Spacing.space6) {
             Text(favorite.title)
-                .font(AppTypography.title)
+                .font(Typography.title)
                 .lineLimit(2)
 
             Text(favorite.podcastTitle)
-                .font(AppTypography.body)
-                .foregroundStyle(.secondary)
+                .font(Typography.body)
+                .foregroundStyle(Colors.textSecondary)
                 .lineLimit(1)
 
             if let summary = favorite.summary, !summary.isEmpty {
                 Text(summary)
-                    .font(AppTypography.caption)
-                    .foregroundStyle(.secondary)
+                    .font(Typography.caption)
+                    .foregroundStyle(Colors.textSecondary)
                     .lineLimit(2)
             }
 
-            HStack(spacing: 8) {
+            HStack(spacing: Spacing.space8) {
                 if let publishedAt = favorite.publishedAt {
                     Text(publishedAt, style: .date)
-                        .font(AppTypography.caption)
-                        .foregroundStyle(.secondary)
+                        .font(Typography.caption)
+                        .foregroundStyle(Colors.textSecondary)
                 }
 
                 if let duration = favorite.duration {
                     Text(formatDuration(duration))
-                        .font(AppTypography.caption)
-                        .foregroundStyle(.secondary)
+                        .font(Typography.caption)
+                        .foregroundStyle(Colors.textSecondary)
                 }
             }
         }
-        .padding(.vertical, 6)
+        .padding(.vertical, Spacing.space6)
     }
 
     private func formatDuration(_ seconds: TimeInterval) -> String {

@@ -11,7 +11,7 @@ import NukeUI
 struct PodcastArtworkView: View {
     let imageURL: URL?
     let size: CGFloat
-    var cornerRadius: CGFloat = 16
+    var cornerRadius: CGFloat = Spacing.radius16
 
     var body: some View {
         LazyImage(url: imageURL) { state in
@@ -27,16 +27,16 @@ struct PodcastArtworkView: View {
         }
         .frame(width: size, height: size)
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-        .shadow(color: Color.black.opacity(0.12), radius: 12, x: 0, y: 6)
+        .shadow(color: Colors.artworkShadow, radius: Spacing.shadowRadius12, x: 0, y: 6)
     }
 
     private var placeholder: some View {
         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-            .fill(Color.gray.opacity(0.2))
+            .fill(Colors.surfaceMuted)
             .overlay {
                 Image(systemName: "mic.fill")
                     .font(.system(size: 48, weight: .semibold))
-                    .foregroundStyle(.gray.opacity(0.7))
+                    .foregroundStyle(Colors.iconMuted)
             }
     }
 }
@@ -44,7 +44,7 @@ struct PodcastArtworkView: View {
 #Preview("Artwork (isolado)") {
     PodcastArtworkView(
         imageURL: URL(string: "https://example.com/artwork.jpg"),
-        size: 200
+        size: Size.previewArtwork
     )
     .padding()
 }

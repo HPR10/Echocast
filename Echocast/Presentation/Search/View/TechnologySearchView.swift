@@ -12,7 +12,7 @@ struct TechnologySearchView: View {
     @State private var viewModel: TechnologySearchViewModel
     @State private var navigationPath = NavigationPath()
     @State private var isShowingSelectionError = false
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 12), count: 2)
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: Spacing.space12), count: 2)
 
     init(viewModel: TechnologySearchViewModel) {
         _viewModel = State(initialValue: viewModel)
@@ -51,15 +51,15 @@ struct TechnologySearchView: View {
                         )
                     } else {
                         ScrollView {
-                            LazyVGrid(columns: columns, spacing: 12) {
+                            LazyVGrid(columns: columns, spacing: Spacing.space12) {
                                 ForEach(viewModel.podcasts) { podcast in
                                     Button {
                                         Task { await viewModel.selectPodcast(podcast) }
                                     } label: {
                                         artworkView(for: podcast, viewModel: viewModel)
                                         .frame(maxWidth: .infinity)
-                                        .frame(height: 140)
-                                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                        .frame(height: Size.searchCardHeight)
+                                        .clipShape(RoundedRectangle(cornerRadius: Spacing.radius12, style: .continuous))
                                         .appCardStyle()
                                     }
                                     .buttonStyle(.plain)
@@ -75,21 +75,21 @@ struct TechnologySearchView: View {
                                     HStack {
                                         Spacer()
                                         ProgressView("Carregando mais...")
-                                            .padding(.vertical, 8)
+                                            .padding(.vertical, Spacing.space8)
                                         Spacer()
                                     }
                                     .gridCellColumns(columns.count)
                                 } else if viewModel.hasMore {
                                     Color.clear
-                                        .frame(height: 1)
+                                        .frame(height: Size.searchLoadMoreSentinelHeight)
                                         .gridCellColumns(columns.count)
                                         .onAppear {
                                             Task { await viewModel.loadMore() }
                                         }
                                 }
                             }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 12)
+                            .padding(.horizontal, Spacing.space16)
+                            .padding(.vertical, Spacing.space12)
                         }
                         .refreshable {
                             await viewModel.loadPodcasts()
@@ -123,15 +123,15 @@ struct TechnologySearchView: View {
         .overlay {
             if viewModel.isLoadingPodcast {
                 ZStack {
-                    Color(.systemBackground)
+                    Colors.backgroundPrimary
                         .ignoresSafeArea()
 
-                    VStack(spacing: 12) {
+                    VStack(spacing: Spacing.space12) {
                         ProgressView()
                             .controlSize(.large)
                         Text("Carregando podcast...")
-                            .font(AppTypography.body)
-                            .foregroundStyle(.secondary)
+                            .font(Typography.body)
+                            .foregroundStyle(Colors.textSecondary)
                     }
                 }
             }
@@ -152,17 +152,17 @@ struct TechnologySearchView: View {
                             .scaledToFill()
                     } else if state.isLoading {
                         ZStack {
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .fill(.quaternary.opacity(0.2))
+                            RoundedRectangle(cornerRadius: Spacing.radius12, style: .continuous)
+                                .fill(Colors.surfaceMuted)
                             ProgressView()
                         }
                     } else {
                         ZStack {
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .fill(.quaternary.opacity(0.2))
+                            RoundedRectangle(cornerRadius: Spacing.radius12, style: .continuous)
+                                .fill(Colors.surfaceMuted)
                             Image(systemName: "waveform")
-                                .font(.title2)
-                                .foregroundStyle(.secondary)
+                                .font(Typography.iconArtworkFallback)
+                                .foregroundStyle(Colors.textSecondary)
                         }
                     }
                 }
@@ -174,11 +174,11 @@ struct TechnologySearchView: View {
             }
         } else {
             ZStack {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(.quaternary.opacity(0.2))
+                RoundedRectangle(cornerRadius: Spacing.radius12, style: .continuous)
+                    .fill(Colors.surfaceMuted)
                 Image(systemName: "waveform")
-                    .font(.title2)
-                    .foregroundStyle(.secondary)
+                    .font(Typography.iconArtworkFallback)
+                    .foregroundStyle(Colors.textSecondary)
             }
         }
     }

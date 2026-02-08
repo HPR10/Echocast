@@ -20,29 +20,29 @@ struct AppTextField: View {
     var focus: FocusState<Bool>.Binding?
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: Spacing.space12) {
             if let leadingSystemImage {
                 Image(systemName: leadingSystemImage)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Colors.textSecondary)
             }
 
             configuredTextField
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 16)
+        .padding(.horizontal, Spacing.space14)
+        .padding(.vertical, Spacing.space16)
         .background(
             .ultraThinMaterial,
-            in: RoundedRectangle(cornerRadius: 14, style: .continuous)
+            in: RoundedRectangle(cornerRadius: Spacing.radius14, style: .continuous)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
+            RoundedRectangle(cornerRadius: Spacing.radius14, style: .continuous)
                 .stroke(borderColor, lineWidth: 1)
         )
-        .shadow(color: Color.black.opacity(0.08), radius: 10, x: 0, y: 4)
+        .shadow(color: Colors.inputShadow, radius: Spacing.shadowRadius10, x: 0, y: 4)
     }
 
     private var borderColor: Color {
-        hasError ? .red : Color.secondary.opacity(0.35)
+        hasError ? Colors.feedbackError : Colors.textSecondary.opacity(0.35)
     }
 
     @ViewBuilder

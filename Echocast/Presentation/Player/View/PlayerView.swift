@@ -61,11 +61,11 @@ struct PlayerView: View {
 
             GeometryReader { geometry in
                 let bannerSize = min(
-                    max(geometry.size.height * 0.25, 170),
-                    geometry.size.width * 0.75
+                    max(geometry.size.height * Size.playerBannerHeightRatio, Size.playerBannerMin),
+                    geometry.size.width * Size.playerBannerWidthRatio
                 )
 
-                VStack(spacing: 24) {
+                VStack(spacing: Spacing.space24) {
                     PodcastArtworkView(
                         imageURL: podcastImageURL,
                         size: bannerSize
@@ -81,8 +81,8 @@ struct PlayerView: View {
                 .sheet(isPresented: .init(get: { fullDescriptionText != nil }, set: { if !$0 { fullDescriptionText = nil } })) {
                     ScrollView {
                         Text(fullDescriptionText ?? "")
-                            .font(.body)
-                            .foregroundStyle(.primary)
+                            .font(Typography.bodyRegular)
+                            .foregroundStyle(Colors.textPrimary)
                             .multilineTextAlignment(.leading)
                             .textSelection(.enabled)
                             .padding()
@@ -112,37 +112,36 @@ struct PlayerView: View {
 private extension PlayerView {
     @ViewBuilder
     var headerSection: some View {
-        VStack(spacing: 8) {
-            HStack(spacing: 8) {
+        VStack(spacing: Spacing.space8) {
+            HStack(spacing: Spacing.space8) {
                 Spacer()
                 favoriteButton
             }
 
             if let publishedAt = viewModel.episode.publishedAt {
                 Text(publishedAt, style: .date)
-                    .font(AppTypography.body)
-                    .foregroundStyle(.secondary)
+                    .font(Typography.body)
+                    .foregroundStyle(Colors.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .center)
             }
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: Spacing.space4) {
                 Text(viewModel.episode.title)
-                    .font(.title3)
-                    .fontWeight(.semibold)
+                    .font(Typography.playerTitle)
                     .multilineTextAlignment(.leading)
 
                 Text(viewModel.podcastTitle)
-                    .font(AppTypography.body)
-                    .foregroundStyle(.secondary)
+                    .font(Typography.body)
+                    .foregroundStyle(Colors.textSecondary)
                     .multilineTextAlignment(.leading)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
             if let description = viewModel.episode.description, !description.isEmpty {
-                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                HStack(alignment: .firstTextBaseline, spacing: Spacing.space6) {
                     Text(description)
-                        .font(AppTypography.body)
-                        .foregroundStyle(.secondary)
+                        .font(Typography.body)
+                        .foregroundStyle(Colors.textSecondary)
                         .multilineTextAlignment(.leading)
                         .lineLimit(3)
                         .truncationMode(.tail)
@@ -160,9 +159,9 @@ private extension PlayerView {
 
     private func glowCircle(size: CGFloat) -> some View {
         Circle()
-            .fill(Color.primary.opacity(0.18))
+            .fill(Colors.glowPrimary)
             .frame(width: size, height: size)
-            .blur(radius: 8)
+            .blur(radius: Spacing.blurRadius8)
     }
 
     private var favoriteButton: some View {
@@ -180,8 +179,8 @@ private extension PlayerView {
             }
         } label: {
             Image(systemName: isFavorite ? "star.fill" : "star")
-                .font(.title2.weight(.semibold))
-                .foregroundStyle(isFavorite ? Color.yellow : Color.secondary)
+                .font(Typography.iconFavorite)
+                .foregroundStyle(isFavorite ? Colors.favoriteActive : Colors.favoriteInactive)
                 .scaleEffect(isFavorite ? 1.1 : 1.0)
                 .symbolEffect(.bounce, value: isFavorite)
                 .accessibilityLabel(isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos")
@@ -194,15 +193,15 @@ private extension PlayerView {
     var playbackSection: some View {
         if !viewModel.hasAudio {
             Text("Audio indisponivel para este episodio.")
-                .font(AppTypography.meta)
-                .foregroundStyle(.secondary)
+                .font(Typography.meta)
+                .foregroundStyle(Colors.textSecondary)
         }
     }
 
     @ViewBuilder
     var controlSection: some View {
-        VStack(spacing: 12) {
-            HStack(spacing: 20) {
+        VStack(spacing: Spacing.space12) {
+            HStack(spacing: Spacing.space20) {
                 Button {
                     viewModel.skipBackward()
                     withAnimation(.easeInOut(duration: 0.35)) {
@@ -210,8 +209,11 @@ private extension PlayerView {
                     }
                 } label: {
                     Image(systemName: "gobackward.30")
-                        .font(.system(size: 32, weight: .semibold))
-                        .frame(width: 72, height: 48)
+                        .font(Typography.iconTransportSecondary)
+                        .frame(
+                            width: Size.playerTransportSecondaryWidth,
+                            height: Size.playerTransportSecondaryHeight
+                        )
                         .rotationEffect(.degrees(backwardRotation))
                         .animation(.easeInOut(duration: 0.35), value: backwardRotation)
                 }
@@ -223,8 +225,11 @@ private extension PlayerView {
                     viewModel.togglePlayback()
                 } label: {
                     Image(systemName: viewModel.isPlaying ? "pause.fill" : "play.fill")
-                        .font(.system(size: 40, weight: .bold))
-                        .frame(width: 80, height: 56)
+                        .font(Typography.iconTransportPrimary)
+                        .frame(
+                            width: Size.playerTransportPrimaryWidth,
+                            height: Size.playerTransportPrimaryHeight
+                        )
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(viewModel.isPlaying ? "Pausar" : "Reproduzir")
@@ -237,8 +242,11 @@ private extension PlayerView {
                     }
                 } label: {
                     Image(systemName: "goforward.15")
-                        .font(.system(size: 32, weight: .semibold))
-                        .frame(width: 72, height: 48)
+                        .font(Typography.iconTransportSecondary)
+                        .frame(
+                            width: Size.playerTransportSecondaryWidth,
+                            height: Size.playerTransportSecondaryHeight
+                        )
                         .rotationEffect(.degrees(forwardRotation))
                         .animation(.easeInOut(duration: 0.35), value: forwardRotation)
                 }
@@ -249,7 +257,7 @@ private extension PlayerView {
             .frame(maxWidth: .infinity)
             .overlay(alignment: .leading) {
                 shareButton
-                    .padding(.leading, 4)
+                    .padding(.leading, Spacing.space4)
             }
             .overlay(alignment: .trailing) {
                 Menu {
@@ -267,17 +275,17 @@ private extension PlayerView {
                     }
                 } label: {
                     ZStack {
-                        glowCircle(size: 38)
+                        glowCircle(size: Size.playerSpeedGlow)
                         Image(systemName: "speedometer")
-                            .font(.system(size: 20, weight: .semibold))
-                            .frame(width: 36, height: 36)
+                            .font(Typography.iconUtility)
+                            .frame(width: Size.playerUtilityButton, height: Size.playerUtilityButton)
                     }
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(Colors.textPrimary)
                     .accessibilityLabel("Velocidade de reproducao")
                 }
                 .disabled(!viewModel.hasAudio)
-                .tint(.primary)
-                .padding(.trailing, 4)
+                .tint(Colors.tintPrimary)
+                .padding(.trailing, Spacing.space4)
             }
         }
     }
@@ -291,18 +299,18 @@ private extension PlayerView {
                     message: Text(shareData.message)
                 ) {
                     ZStack {
-                        glowCircle(size: 36)
+                        glowCircle(size: Size.playerShareGlow)
                         Image(systemName: "square.and.arrow.up")
-                            .font(.system(size: 20, weight: .semibold))
-                            .frame(width: 36, height: 36)
+                            .font(Typography.iconUtility)
+                            .frame(width: Size.playerUtilityButton, height: Size.playerUtilityButton)
                     }
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(Colors.textPrimary)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Compartilhar episodio")
             } else {
                 Color.clear
-                    .frame(width: 36, height: 36)
+                    .frame(width: Size.playerUtilityButton, height: Size.playerUtilityButton)
                     .opacity(0)
             }
         }
@@ -335,13 +343,13 @@ private extension PlayerView {
         let maxDuration = max(viewModel.duration, 1)
         let remainingTime = max(maxDuration - viewModel.currentTime, 0)
 
-        VStack(spacing: 8) {
+        VStack(spacing: Spacing.space8) {
             if viewModel.isBuffering {
-                HStack(spacing: 8) {
+                HStack(spacing: Spacing.space8) {
                     ProgressView()
                     Text(viewModel.bufferingMessage ?? "Carregando...")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(.secondary)
+                        .font(Typography.caption)
+                        .foregroundStyle(Colors.textSecondary)
                         .multilineTextAlignment(.leading)
                 }
             }
@@ -364,14 +372,14 @@ private extension PlayerView {
 
             HStack {
                 Text(viewModel.currentTimeText)
-                    .font(AppTypography.caption)
-                    .foregroundStyle(.secondary)
+                    .font(Typography.caption)
+                    .foregroundStyle(Colors.textSecondary)
 
                 Spacer()
 
                 Text("-\(formatTime(remainingTime))")
-                    .font(AppTypography.caption)
-                    .foregroundStyle(.secondary)
+                    .font(Typography.caption)
+                    .foregroundStyle(Colors.textSecondary)
             }
         }
     }

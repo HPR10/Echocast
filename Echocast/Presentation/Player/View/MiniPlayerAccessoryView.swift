@@ -13,32 +13,32 @@ struct MiniPlayerAccessoryView: View {
     let podcastImageURL: URL?
     let onTap: () -> Void
 
-    private let artworkSize: CGFloat = 36
+    private let artworkSize: CGFloat = Size.miniPlayerArtwork
 
     var body: some View {
         @Bindable var viewModel = viewModel
 
-        HStack(spacing: 12) {
+        HStack(spacing: Spacing.space12) {
             MiniArtworkView(imageURL: podcastImageURL, size: artworkSize)
 
             Text(viewModel.episode.title)
-                .font(AppTypography.body)
-                .foregroundStyle(.primary)
+                .font(Typography.body)
+                .foregroundStyle(Colors.textPrimary)
                 .lineLimit(1)
 
-            Spacer(minLength: 8)
+            Spacer(minLength: Spacing.space8)
 
             Button {
                 viewModel.togglePlayback()
             } label: {
                 Image(systemName: viewModel.isPlaying ? "pause.fill" : "play.fill")
-                    .font(.system(size: 16, weight: .semibold))
-                    .frame(width: 32, height: 32)
+                    .font(Typography.iconMiniControl)
+                    .frame(width: Size.miniPlayerControl, height: Size.miniPlayerControl)
             }
             .buttonStyle(.plain)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
+        .padding(.horizontal, Spacing.space16)
+        .padding(.vertical, Spacing.space8)
         .contentShape(Capsule())
         .gesture(
             TapGesture()
@@ -61,16 +61,16 @@ private struct MiniArtworkView: View {
                         .scaledToFill()
                 } else {
                     ZStack {
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .fill(Color.gray.opacity(0.2))
+                        RoundedRectangle(cornerRadius: Spacing.radius8, style: .continuous)
+                            .fill(Colors.surfaceMuted)
                         Image(systemName: "mic.fill")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(.gray.opacity(0.7))
+                            .font(Typography.iconMiniPlaceholder)
+                            .foregroundStyle(Colors.iconMuted)
                     }
                 }
             }
         }
         .frame(width: size, height: size)
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: Spacing.radius8, style: .continuous))
     }
 }
